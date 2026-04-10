@@ -1,0 +1,53 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Landing           from './pages/Landing';
+import StudentLogin      from './pages/StudentLogin';
+import TeacherLogin      from './pages/TeacherLogin';
+import StudentDashboard  from './pages/student/Dashboard';
+import RegisterProject   from './pages/student/RegisterProject';
+import MyProject         from './pages/student/MyProject';
+import TeacherDashboard  from './pages/teacher/Dashboard';
+import ProjectMonitoring from './pages/teacher/ProjectMonitoring';
+import StudentsList      from './pages/teacher/StudentsList';
+
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { isAuthenticated, role, loading } = useAuth();
+  if (loading) return <div className="flex h-screen items-center justify-center text-blue-600 text-lg">Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (requiredRole && role !== requiredRole)
+    return <Navigate to={role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'} replace />;
+  return children;
+};
+
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, role } = useAuth();
+  if (isAuthenticated) return <Navigate to={role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'} replace />;
+  return children;
+};
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster position="top-right" />
+        <Routes>
+          <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+          <Route path="/student/login" element={<PublicRoute><StudentLogin /></PublicRoute>} />
+          <Route path="/student/register" element={<PublicRoute><StudentLogin /></PublicRoute>} />
+          <Route path="/teacher/login" element={<PublicRoute><TeacherLogin /></PublicRoute>} />
+          
+          <Route path="/student/dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
+          <Route path="/student/project/register" element={<ProtectedRoute requiredRole="student"><RegisterProject /></ProtectedRoute>} />
+          <Route path="/student/project/my" element={<ProtectedRoute requiredRole="student"><MyProject /></ProtectedRoute>} />
+          
+          <Route path="/teacher/dashboard" element={<ProtectedRoute requiredRole="teacher"><TeacherDashboard /></ProtectedRoute>} />
+          <Route path="/teacher/monitoring" element={<ProtectedRoute requiredRole="teacher"><ProjectMonitoring /></ProtectedRoute>} />
+          <Route path="/teacher/students" element={<ProtectedRoute requiredRole="teacher"><StudentsList /></ProtectedRoute>} />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
