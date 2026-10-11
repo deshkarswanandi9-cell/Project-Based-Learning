@@ -17,18 +17,44 @@ export default function RegisterProject() {
   // Read from session storage if available
   const savedDraft = JSON.parse(sessionStorage.getItem('registerProjectDraft'));
 
-  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: savedDraft || {
-      title: '', type: '', domain: '', description: '', github_link: '', linkedin_link: '',
-      semester: '', academic_year: '', mentor_id: '',
-      team_members: [{ name: '', rollNumber: '', rbtNumber: '' }],
-      sdg_goals: [],
-      pos: [],
-      technologies: []
+  let initialType = savedDraft?.type || '';
+  let initialHackathonPos = savedDraft?.hackathon_position || '';
+  let initialOtherPos = savedDraft?.hackathon_other_position || '';
+
+  if (initialType.startsWith('Hackathon')) {
+    const match = initialType.match(/^Hackathon\s*\((.*)\)$/);
+    if (match) {
+      initialType = 'Hackathon';
+      const extracted = match[1];
+      if (['1st', '2nd', '3rd'].includes(extracted)) {
+        initialHackathonPos = initialHackathonPos || extracted;
+      } else {
+        initialHackathonPos = initialHackathonPos || 'Other';
+        initialOtherPos = initialOtherPos || extracted;
+      }
     }
+  }
+
+  const defaultFormValues = {
+    title: '', domain: '', description: '', github_link: '', linkedin_link: '',
+    semester: '', academic_year: '', mentor_id: '',
+    team_members: [{ name: '', rollNumber: '', rbtNumber: '' }],
+    sdg_goals: [],
+    pos: [],
+    technologies: [],
+    ...(savedDraft || {}),
+    type: initialType || savedDraft?.type || '',
+    hackathon_position: initialHackathonPos || savedDraft?.hackathon_position || '',
+    hackathon_other_position: initialOtherPos || savedDraft?.hackathon_other_position || ''
+  };
+
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+    defaultValues: defaultFormValues
   });
 
   const formValues = watch();
+  const selectedType = watch('type');
+  const selectedHackathonPos = watch('hackathon_position');
 
   // Save draft whenever form values change
   useEffect(() => {
@@ -109,9 +135,17 @@ export default function RegisterProject() {
       toast.loading('Submitting project...', { id: 'upload' });
       const mentor = teachers.find(t => t.id === parseInt(data.mentor_id));
 
+      let finalType = data.type;
+      if (data.type === 'Hackathon') {
+        const posText = data.hackathon_position === 'Other'
+          ? (data.hackathon_other_position?.trim() || 'Other')
+          : data.hackathon_position;
+        finalType = posText ? `Hackathon (${posText})` : 'Hackathon';
+      }
+
       await registerProject({
         title: data.title,
-        type: data.type,
+        type: finalType,
         domain: data.domain,
         description: data.description,
         technologies: data.technologies,
@@ -154,6 +188,8 @@ export default function RegisterProject() {
                 {errors.mentor_id && <li>Please select a PBL Coordinator</li>}
                 {screenshotError && <li>{screenshotError}</li>}
                 {errors.type && <li>Project type is required</li>}
+                {errors.hackathon_position && <li>{errors.hackathon_position.message}</li>}
+                {errors.hackathon_other_position && <li>{errors.hackathon_other_position.message}</li>}
                 {errors.domain && <li>Project domain is required</li>}
                 {errors.semester && <li>Semester is required</li>}
                 {errors.academic_year && <li>Academic year is required</li>}
@@ -178,12 +214,71 @@ export default function RegisterProject() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Type of Project</label>
                 <div className="flex gap-4">
                   {PROJECT_TYPES.map(t => (
-                    <label key={t} className="flex items-center text-sm text-gray-700">
-                      <input type="radio" value={t} {...register("type", { required: "Required" })} className="mr-2" />
+                    <label key={t} className="flex items-center text-sm text-gray-700 cursor-pointer">
+                      <input type="radio" value={t} {...register("type", { required: "Project type is required" })} className="mr-2 text-brand-maroon focus:ring-brand-maroon" />
                       {t}
                     </label>
                   ))}
                 </div>
+
+                {/* Hackathon Position Selection */}
+                {selectedType === 'Hackathon' && (
+                  <div className="mt-3.5 p-3.5 bg-amber-50/80 border border-amber-200 rounded-lg animate-in fade-in duration-200">
+                    <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider mb-2">
+                      Position Secured <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-4">
+                      {[
+                        { label: '1st', value: '1st' },
+                        { label: '2nd', value: '2nd' },
+                        { label: '3rd', value: '3rd' },
+                        { label: 'Other', value: 'Other' }
+                      ].map(pos => (
+                        <label key={pos.value} className="flex items-center text-sm font-medium text-gray-800 cursor-pointer">
+                          <input
+                            type="radio"
+                            value={pos.value}
+                            {...register("hackathon_position", {
+                              validate: (v) => {
+                                if (watch('type') === 'Hackathon' && !v) {
+                                  return 'Please select your position in the Hackathon';
+                                }
+                                return true;
+                              }
+                            })}
+                            className="mr-1.5 text-brand-maroon focus:ring-brand-maroon"
+                          />
+                          {pos.label}
+                        </label>
+                      ))}
+                    </div>
+
+                    {selectedHackathonPos === 'Other' && (
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          {...register("hackathon_other_position", {
+                            validate: (v) => {
+                              if (watch('type') === 'Hackathon' && watch('hackathon_position') === 'Other' && (!v || !v.trim())) {
+                                return 'Please type your Hackathon position';
+                              }
+                              return true;
+                            }
+                          })}
+                          placeholder="Type position / award (e.g., Runner Up, Consolation, Special Mention)"
+                          className="w-full px-3 py-2 text-sm border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400"
+                        />
+                        {errors.hackathon_other_position && (
+                          <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_other_position.message}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {errors.hackathon_position && (
+                      <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_position.message}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Project Domain</label>

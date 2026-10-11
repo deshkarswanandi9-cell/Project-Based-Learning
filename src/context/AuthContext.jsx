@@ -9,6 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole]       = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async (userId) => {
+    setLoading(true);
+    const { data: s } = await supabase.from('students')
+      .select('*').eq('user_id', userId).maybeSingle();
+    if (s) { setProfile(s); setRole('student'); setLoading(false); return; }
+    const { data: t } = await supabase.from('teachers')
+      .select('*').eq('user_id', userId).maybeSingle();
+    if (t) { setProfile(t); setRole('teacher'); }
+    setLoading(false);
+  };
+
   useEffect(() => {
     // Handle initial session, gracefully clear on invalid refresh token
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -38,17 +49,6 @@ export const AuthProvider = ({ children }) => {
       });
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchProfile = async (userId) => {
-    setLoading(true);
-    const { data: s } = await supabase.from('students')
-      .select('*').eq('user_id', userId).maybeSingle();
-    if (s) { setProfile(s); setRole('student'); setLoading(false); return; }
-    const { data: t } = await supabase.from('teachers')
-      .select('*').eq('user_id', userId).maybeSingle();
-    if (t) { setProfile(t); setRole('teacher'); }
-    setLoading(false);
-  };
 
   const studentRegister = async ({ fullName, email, password,
     rollNumber, rbtNumber, department, year, semester, academic_year, phone }) => {

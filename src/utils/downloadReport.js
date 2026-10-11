@@ -6,7 +6,7 @@ import rscoeLogo from '../assets/rscoe_logo.png';
  * Generates a PDF report for a project in the specific layout requested.
  * Matches the JSPM's RSCOE Project Details Form format.
  */
-export const downloadReport = async (project, studentProfile) => {
+export const downloadReport = async (project, _studentProfile) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

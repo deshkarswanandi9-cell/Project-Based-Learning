@@ -29,7 +29,7 @@ export default function ProjectMonitoring() {
     try {
       const data = await getTeacherProjects(profile.user_id);
       setProjects(data);
-    } catch(e) {
+    } catch {
       toast.error('Failed to load projects');
     } finally {
       setLoading(false);
@@ -89,6 +89,16 @@ export default function ProjectMonitoring() {
       await fetchProjects();
     } catch(e) { toast.error(e.message); }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
