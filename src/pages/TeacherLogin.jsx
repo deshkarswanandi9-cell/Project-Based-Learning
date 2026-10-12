@@ -16,16 +16,16 @@ function PasswordInput({ registration, placeholder = '••••••••',
         <input
           type={show ? 'text' : 'password'}
           {...registration}
-          className="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs sm:text-sm"
           placeholder={placeholder}
         />
         <button
           type="button"
           onClick={() => setShow(v => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           tabIndex={-1}
         >
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </button>
       </div>
       {error && <span className="text-red-500 text-xs mt-1 block">{error}</span>}
@@ -85,45 +85,34 @@ export default function TeacherLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* ── NAVBAR ── */}
-      <header className="bg-brand-maroon shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition">
-            <BookOpen className="w-6 h-6 text-white" />
-            <span className="font-bold text-white text-lg tracking-tight">Project Based Learning</span>
-          </Link>
-          <span className="text-sm font-medium text-red-100 hidden sm:block">JSPM's RSCOE · Department of Computer Engineering</span>
-        </div>
-      </header>
-
-      <div className="flex-1 flex items-center justify-center p-4 py-12">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-md border border-gray-200 p-8 relative">
-          <Link to="/" className="absolute top-6 left-6 text-gray-400 hover:text-brand-maroon flex items-center text-sm font-medium gap-1 transition">
-            <ArrowLeft className="w-4 h-4" />
+    <div className="flex-1 bg-gray-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4 sm:py-10">
+        <div className="max-w-md w-full bg-white rounded-md shadow-2xs border border-gray-200/90 p-6 sm:p-8 relative">
+          <Link to="/" className="absolute top-5 left-5 text-gray-400 hover:text-brand-maroon flex items-center text-xs font-medium gap-1 transition">
+            <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </Link>
 
           {/* Header */}
-          <div className="text-center mt-6 mb-7">
-            <div className="w-16 h-16 bg-brand-maroon/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-maroon/20">
-              <BookOpen className="w-8 h-8 text-brand-maroon" />
+          <div className="text-center mt-3 mb-6">
+            <div className="w-12 h-12 bg-brand-maroon/10 rounded-md flex items-center justify-center mx-auto mb-3 border border-brand-maroon/20">
+              <BookOpen className="w-6 h-6 text-brand-maroon" />
             </div>
-            <h2 className="text-2xl font-extrabold text-brand-maroon">PBL Coordinator Portal</h2>
-            <p className="text-sm text-gray-500 mt-1">Project Based Learning — Coordinator Access</p>
+            <h2 className="text-xl font-bold text-brand-maroon">PBL Coordinator Portal</h2>
+            <p className="text-xs text-gray-500 mt-1">Project Based Learning — Faculty &amp; Coordinator Access</p>
           </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 mb-5">
           <button
-            className={`flex-1 py-3 text-sm font-bold border-b-2 transition ${activeTab === 'login' ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition ${activeTab === 'login' ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('login')}
             type="button"
           >
             Login
           </button>
           <button
-            className={`flex-1 py-3 text-sm font-bold border-b-2 transition ${activeTab === 'register' ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition ${activeTab === 'register' ? 'border-brand-maroon text-brand-maroon' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('register')}
             type="button"
           >
@@ -133,20 +122,20 @@ export default function TeacherLogin() {
 
         {/* LOGIN FORM */}
         <div className={activeTab === 'login' ? 'block' : 'hidden'}>
-          <form onSubmit={handleSubmitLogin(onLoginSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmitLogin(onLoginSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
                 {...registerLogin('email', { required: 'Email is required' })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs sm:text-sm"
                 placeholder="teacher@college.edu"
               />
               {errorsLogin.email && <span className="text-red-500 text-xs mt-1 block">{errorsLogin.email.message}</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
               <PasswordInput
                 registration={registerLogin('password', { required: 'Password is required' })}
                 error={errorsLogin.password?.message}
@@ -154,11 +143,11 @@ export default function TeacherLogin() {
             </div>
 
             {/* Forgot password */}
-            <div className="text-right -mt-2">
+            <div className="text-right -mt-1">
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-xs text-blue-600 hover:text-blue-800 font-semibold hover:underline"
+                className="text-xs text-brand-maroon hover:underline font-medium"
               >
                 Forgot Password?
               </button>
@@ -167,7 +156,7 @@ export default function TeacherLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-maroon hover:bg-[#6e2e2e] text-white font-bold rounded-xl shadow transition disabled:opacity-70 mt-2"
+              className="w-full py-2.5 bg-brand-maroon hover:bg-[#6e2e2e] text-white text-xs sm:text-sm font-semibold rounded-md shadow-2xs transition disabled:opacity-70 mt-1"
             >
               {loading ? 'Logging in...' : 'Login as PBL Coordinator'}
             </button>
@@ -178,32 +167,32 @@ export default function TeacherLogin() {
         <div className={activeTab === 'register' ? 'block' : 'hidden'}>
           <form onSubmit={handleSubmitSignup(onRegisterSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
               <input
                 {...registerSignup('fullName', { required: 'Required' })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs sm:text-sm"
                 placeholder="Prof. Full Name"
               />
               {errorsSignup.fullName && <span className="text-red-500 text-xs mt-1 block">{errorsSignup.fullName.message}</span>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 {...registerSignup('email', { required: 'Required', pattern: /^\S+@\S+$/i })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs sm:text-sm"
                 placeholder="teacher@college.edu"
               />
               {errorsSignup.email && <span className="text-red-500 text-xs mt-1 block">{errorsSignup.email.message || 'Invalid format'}</span>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Department</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Department</label>
                 <select
                   {...registerSignup('department', { required: 'Required' })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none bg-white text-xs sm:text-sm"
                 >
                   <option value="">Select...</option>
                   {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -212,7 +201,7 @@ export default function TeacherLogin() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Year of Joining</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Year of Joining</label>
                 <input
                   type="number"
                   {...registerSignup('yearOfJoining', {
@@ -220,7 +209,7 @@ export default function TeacherLogin() {
                     min: { value: 1980, message: 'Invalid year' },
                     max: { value: new Date().getFullYear(), message: 'Cannot be future' }
                   })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs sm:text-sm"
                   placeholder="e.g. 2018"
                 />
                 {errorsSignup.yearOfJoining && <span className="text-red-500 text-xs mt-1 block">{errorsSignup.yearOfJoining.message}</span>}
@@ -228,7 +217,7 @@ export default function TeacherLogin() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
               <PasswordInput
                 registration={registerSignup('password', { 
                   required: 'Required', 
@@ -243,7 +232,7 @@ export default function TeacherLogin() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Confirm Password</label>
               <PasswordInput
                 registration={registerSignup('confirmPassword', {
                   required: 'Confirm password',
@@ -256,7 +245,7 @@ export default function TeacherLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-maroon hover:bg-[#6e2e2e] text-white font-bold rounded-xl shadow transition disabled:opacity-70 mt-4"
+              className="w-full py-2.5 bg-brand-maroon hover:bg-[#6e2e2e] text-white text-xs sm:text-sm font-semibold rounded-md shadow-2xs transition disabled:opacity-70 mt-3"
             >
               {loading ? 'Creating Account...' : 'Create PBL Coordinator Account'}
             </button>
@@ -267,7 +256,7 @@ export default function TeacherLogin() {
       {/* ── FOOTER ── */}
       <footer className="border-t border-gray-200 bg-white py-5 px-6 text-center">
         <p className="text-xs text-gray-500 font-medium">
-          © 2025–26 Project Based Learning Portal · JSPM's Rajarshi Shahu College of Engineering, Pune
+          © 2026–2027 Project Based Learning Portal · JSPM's Rajarshi Shahu College of Engineering, Pune
         </p>
       </footer>
     </div>

@@ -9,7 +9,8 @@ import {
   Download, FolderOpen, Target, Globe,
   Image as ImageIcon, Eye, ArrowLeft,
   CalendarDays, Users, Layers, CheckCircle2,
-  Clock, XCircle, ChevronDown, ChevronUp
+  Clock, XCircle, ChevronDown, ChevronUp,
+  Award, FileText, ExternalLink
 } from 'lucide-react';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 
@@ -75,7 +76,7 @@ export default function MyProject() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto pb-12">
+      <div className="w-full mx-auto pb-10">
 
         {/* Back button + page title */}
         <div className="flex items-center gap-3 mb-7">
@@ -113,41 +114,41 @@ export default function MyProject() {
 
               return (
                 <div key={project.id || idx}
-                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-4 hover:border-gray-300 transition-all duration-200 shadow-sm">
+                  className="bg-white border border-gray-200/90 rounded-md overflow-hidden mb-4 hover:border-gray-300 transition-all duration-200 shadow-2xs">
 
                   {/* Card header */}
-                  <div className="px-5 py-4 flex items-start justify-between gap-4">
+                  <div className="px-5 py-3.5 flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-3 flex-wrap">
-                        <h2 className="font-bold text-gray-900 text-base leading-snug">{project.title}</h2>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h2 className="font-semibold text-gray-900 text-sm sm:text-base leading-snug">{project.title}</h2>
                         {/* Status */}
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sc.bg} ${sc.color} ${sc.border}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border ${sc.bg} ${sc.color} ${sc.border}`}>
                           <StatusIcon className="w-3 h-3" />
                           {project.status}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1.5 mt-2">
                         {project.type && (
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{project.type}</span>
+                          <span className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">{project.type}</span>
                         )}
                         {project.domain && (
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{project.domain}</span>
+                          <span className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">{project.domain}</span>
                         )}
                         {project.academic_year && (
-                          <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">AY {project.academic_year}</span>
+                          <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">AY {project.academic_year}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => setViewerProject(project)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-700 transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-brand-maroon hover:bg-[#6e2e2e] rounded-md transition shadow-2xs"
                       >
                         <Eye className="w-3.5 h-3.5" /> View
                       </button>
                       <button
                         onClick={() => downloadReport(project, profile)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition"
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -197,10 +198,10 @@ export default function MyProject() {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5" /> Team Members
                         </p>
-                        <div className="divide-y divide-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+                        <div className="divide-y divide-gray-100 border border-gray-200/90 rounded-md overflow-hidden">
                           {(project.team_members || []).map((m, i) => (
-                            <div key={i} className="flex items-center gap-3 px-4 py-2.5 bg-gray-50/50 text-sm">
-                              <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center font-bold flex-shrink-0">{i + 1}</span>
+                            <div key={i} className="flex items-center gap-3 px-3.5 py-2 bg-gray-50/50 text-xs">
+                              <span className="w-5 h-5 rounded-md bg-gray-200 text-gray-700 text-[11px] flex items-center justify-center font-semibold flex-shrink-0">{i + 1}</span>
                               <span className="font-medium text-gray-800">{m.name}</span>
                               <span className="text-gray-400 text-xs ml-auto">{m.rollNumber}</span>
                               <span className="text-gray-400 text-xs">{m.rbtNumber}</span>
@@ -212,7 +213,7 @@ export default function MyProject() {
                       {/* PO + SDG side by side */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                             <Target className="w-3.5 h-3.5" /> Programme Outcomes
                           </p>
                           <div className="flex flex-wrap gap-1.5">
@@ -220,8 +221,8 @@ export default function MyProject() {
                               const mapped = project.pos?.includes(po.id);
                               return (
                                 <span key={po.id} title={po.title}
-                                  className={`text-xs px-2.5 py-1 rounded-full font-bold border transition ${
-                                    mapped ? 'bg-teal-600 text-white border-teal-600' : 'bg-gray-50 text-gray-300 border-gray-100'
+                                  className={`text-xs px-2.5 py-1 rounded-md font-medium border transition ${
+                                    mapped ? 'bg-brand-maroon text-white border-brand-maroon' : 'bg-gray-50 text-gray-400 border-gray-200'
                                   }`}>
                                   {po.id}
                                 </span>
@@ -230,7 +231,7 @@ export default function MyProject() {
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                             <Globe className="w-3.5 h-3.5" /> SDG Goals
                           </p>
                           <div className="flex flex-wrap gap-1.5">
@@ -239,7 +240,7 @@ export default function MyProject() {
                               if (!goal) return null;
                               return (
                                 <span key={goal.id} title={goal.title}
-                                  className="text-xs px-2.5 py-1 rounded-full text-white font-bold"
+                                  className="text-xs px-2.5 py-1 rounded-md text-white font-medium shadow-2xs"
                                   style={{ backgroundColor: goal.color }}>
                                   {goal.id}
                                 </span>
@@ -252,15 +253,15 @@ export default function MyProject() {
                       {/* Screenshots */}
                       {project.screenshot_urls?.length > 0 && (
                         <div>
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                             <ImageIcon className="w-3.5 h-3.5" /> Screenshots
                           </p>
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                             {project.screenshot_urls.map((url, i) => (
                               <a key={i} href={url} target="_blank" rel="noreferrer"
-                                className="block rounded-lg overflow-hidden border border-gray-200 aspect-video bg-gray-50 hover:border-gray-400 transition group">
+                                className="block rounded-md overflow-hidden border border-gray-200 aspect-video bg-gray-50 hover:border-gray-400 transition group">
                                 <img src={url} alt={`Screenshot ${i+1}`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                   loading="lazy" />
                               </a>
                             ))}
@@ -268,10 +269,30 @@ export default function MyProject() {
                         </div>
                       )}
 
+                      {/* Attached Certificate / Proof */}
+                      {project.document_url && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <Award className="w-3.5 h-3.5 text-amber-700" />
+                            {project.type?.includes('Hackathon') ? 'Hackathon Certificate / Proof' : 'Attached Document / Proof'}
+                          </p>
+                          <a
+                            href={project.document_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 rounded-md text-xs font-medium transition group shadow-2xs"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-amber-700" />
+                            <span>View Attached Certificate / Proof Document</span>
+                            <ExternalLink className="w-3 h-3 text-amber-600 ml-0.5" />
+                          </a>
+                        </div>
+                      )}
+
                       {/* Remarks */}
                       {project.remarks && (
-                        <div className={`text-sm px-4 py-3 rounded-xl border ${
-                          project.status === 'Rejected' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                        <div className={`text-xs px-3.5 py-2.5 rounded-md border ${
+                          project.status === 'Rejected' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                         }`}>
                           <span className="font-semibold">Coordinator Remarks: </span>{project.remarks}
                         </div>

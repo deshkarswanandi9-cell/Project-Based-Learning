@@ -39,12 +39,12 @@ export default function StudentsList() {
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Assigned Students Overview</h2>
-        <div className="flex gap-4 mb-6">
-          <div className="px-4 py-2 bg-blue-50 text-blue-800 rounded-lg border border-blue-100 font-semibold text-sm">Total Students: {stats.total}</div>
-          <div className="px-4 py-2 bg-green-50 text-green-800 rounded-lg border border-green-100 font-semibold text-sm">Approved: {stats.approved}</div>
-          <div className="px-4 py-2 bg-amber-50 text-amber-800 rounded-lg border border-amber-100 font-semibold text-sm">Pending: {stats.pending}</div>
+      <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 p-5 mb-5">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Assigned Students Overview</h2>
+        <div className="flex gap-2.5 mb-4 flex-wrap">
+          <div className="px-3 py-1.5 bg-gray-50 text-gray-700 rounded-md border border-gray-200 font-medium text-xs">Total Students: {stats.total}</div>
+          <div className="px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200 font-medium text-xs">Approved: {stats.approved}</div>
+          <div className="px-3 py-1.5 bg-amber-50 text-amber-800 rounded-md border border-amber-200 font-medium text-xs">Pending: {stats.pending}</div>
         </div>
         
         <input 
@@ -52,37 +52,37 @@ export default function StudentsList() {
           placeholder="Search by student name or roll number..." 
           value={search}
           onChange={e=>setSearch(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm mb-4"
+          className="w-full max-w-lg px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-maroon focus:border-brand-maroon outline-none text-xs mb-4"
         />
 
-        <div className="overflow-x-auto border rounded-xl">
-          <table className="min-w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+        <div className="overflow-x-auto border border-gray-200/90 rounded-md">
+          <table className="min-w-full text-xs text-left whitespace-nowrap">
+            <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3">Student Name</th>
-                <th className="px-4 py-3">Roll No</th>
-                <th className="px-4 py-3">Department</th>
-                <th className="px-4 py-3">Year</th>
-                <th className="px-4 py-3">Project Title</th>
-                <th className="px-4 py-3">Domain</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-3 py-2.5">Student Name</th>
+                <th className="px-3 py-2.5">Roll No</th>
+                <th className="px-3 py-2.5">Department</th>
+                <th className="px-3 py-2.5">Year</th>
+                <th className="px-3 py-2.5">Project Title</th>
+                <th className="px-3 py-2.5">Domain</th>
+                <th className="px-3 py-2.5">Status</th>
               </tr>
             </thead>
             <tbody>
               {filteredProjects.map(p => (
-                <tr key={p.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-bold text-gray-900">{p.students?.full_name}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.students?.roll_number}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.students?.department}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.students?.year}</td>
-                  <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate">{p.title}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.domain}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${p.status==='Approved'?'bg-green-100 text-green-800':p.status==='Pending'?'bg-amber-100 text-amber-800':'bg-red-100 text-red-800'}`}>{p.status}</span>
+                <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/70 transition">
+                  <td className="px-3 py-2.5 font-medium text-gray-900">{p.students?.full_name}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{p.students?.roll_number}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{p.students?.department}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{p.students?.year}</td>
+                  <td className="px-3 py-2.5 text-gray-800 max-w-[200px] truncate">{p.title}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{p.domain}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${p.status==='Approved'?'bg-emerald-50 text-emerald-800 border border-emerald-200':p.status==='Pending'?'bg-amber-50 text-amber-800 border border-amber-200':'bg-red-50 text-red-800 border border-red-200'}`}>{p.status}</span>
                   </td>
                 </tr>
               ))}
-              {filteredProjects.length === 0 && <tr><td colSpan="7" className="px-4 py-8 text-center text-gray-500">No students found.</td></tr>}
+              {filteredProjects.length === 0 && <tr><td colSpan="7" className="px-4 py-8 text-center text-gray-500 text-xs">No students found.</td></tr>}
             </tbody>
           </table>
         </div>
