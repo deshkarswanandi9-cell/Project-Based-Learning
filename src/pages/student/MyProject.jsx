@@ -13,6 +13,7 @@ import {
   Award, FileText, ExternalLink
 } from 'lucide-react';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
+import { ProjectScreenshotsGallery, ProjectCertificateLink } from '../../components/common/ProjectAttachments';
 
 const statusConfig = {
   Approved: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
@@ -250,43 +251,14 @@ export default function MyProject() {
                         </div>
                       </div>
 
-                      {/* Screenshots */}
+                      {/* Secure Screenshots Gallery */}
                       {project.screenshot_urls?.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                            <ImageIcon className="w-3.5 h-3.5" /> Screenshots
-                          </p>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                            {project.screenshot_urls.map((url, i) => (
-                              <a key={i} href={url} target="_blank" rel="noreferrer"
-                                className="block rounded-md overflow-hidden border border-gray-200 aspect-video bg-gray-50 hover:border-gray-400 transition group">
-                                <img src={url} alt={`Screenshot ${i+1}`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                  loading="lazy" />
-                              </a>
-                            ))}
-                          </div>
-                        </div>
+                        <ProjectScreenshotsGallery rawUrls={project.screenshot_urls} />
                       )}
 
-                      {/* Attached Certificate / Proof */}
+                      {/* Secure Certificate / Proof */}
                       {project.document_url && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                            <Award className="w-3.5 h-3.5 text-amber-700" />
-                            {project.type?.includes('Hackathon') ? 'Hackathon Certificate / Proof' : 'Attached Document / Proof'}
-                          </p>
-                          <a
-                            href={project.document_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 rounded-md text-xs font-medium transition group shadow-2xs"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-amber-700" />
-                            <span>View Attached Certificate / Proof Document</span>
-                            <ExternalLink className="w-3 h-3 text-amber-600 ml-0.5" />
-                          </a>
-                        </div>
+                        <ProjectCertificateLink rawUrl={project.document_url} type={project.type} />
                       )}
 
                       {/* Remarks */}

@@ -16,7 +16,14 @@ export const AuthProvider = ({ children }) => {
     if (s) { setProfile(s); setRole('student'); setLoading(false); return; }
     const { data: t } = await supabase.from('teachers')
       .select('*').eq('user_id', userId).maybeSingle();
-    if (t) { setProfile(t); setRole('teacher'); }
+    if (t) {
+      setProfile(t);
+      if (t.is_approved) {
+        setRole('teacher');
+      } else {
+        setRole('unapproved_teacher');
+      }
+    }
     setLoading(false);
   };
 
@@ -88,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     const { error: pe } = await supabase.from('teachers').insert({
       user_id: data.user.id, full_name: fullName.trim(),
       email: email.trim().toLowerCase(),
-      department, year_of_joining: parseInt(yearOfJoining), is_approved: true,
+      department, year_of_joining: parseInt(yearOfJoining), is_approved: false,
     });
     if (pe) throw new Error(pe.message);
     return data;
@@ -102,8 +109,14 @@ export const AuthProvider = ({ children }) => {
 
     const { data: t } = await supabase.from('teachers')
       .select('*').eq('user_id', data.user.id).maybeSingle();
-    if (!t) { await supabase.auth.signOut();
-      throw new Error('No teacher account found with this email'); }
+    if (!t) {
+      await supabase.auth.signOut();
+      throw new Error('No teacher account found with this email');
+    }
+    if (!t.is_approved) {
+      await supabase.auth.signOut();
+      throw new Error('Your faculty account has been registered but is pending administrator approval. Please contact your Department PBL Coordinator.');
+    }
     return data;
   };
 

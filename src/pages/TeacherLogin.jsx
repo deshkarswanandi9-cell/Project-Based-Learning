@@ -61,7 +61,7 @@ export default function TeacherLogin() {
     setLoading(true);
     try {
       await teacherRegister(data);
-      toast.success('Account created! Please login.');
+      toast.success('Registration submitted! Your faculty account requires administrator approval before activation.', { duration: 6000 });
       setActiveTab('login');
     } catch (error) {
       toast.error(error.message || 'Error creating account');

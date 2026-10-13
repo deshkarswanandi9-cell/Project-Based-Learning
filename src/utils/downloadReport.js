@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import jspmLogo from '../assets/jspm_logo.jpeg';
 import rscoeLogo from '../assets/rscoe_logo.png';
+import { getSignedViewUrls } from './storageUtils';
 
 /**
  * Generates a PDF report for a project in the specific layout requested.
@@ -150,7 +151,9 @@ export const downloadReport = async (project, _studentProfile) => {
 
   // Project Screenshots (GRID Layout)
   doc.setFont(labelFont, 'bold');
-  const screenshots = project.screenshot_urls || (project.document_url ? [project.document_url] : []);
+  const rawScreenshots = project.screenshot_urls || (project.document_url ? [project.document_url] : []);
+  const resolvedUrls = await getSignedViewUrls(rawScreenshots);
+  const screenshots = resolvedUrls.filter(Boolean);
   const sLabel = `Project Screenshot${screenshots.length !== 1 ? 's' : ''}:`;
   doc.text(sLabel, margin, y);
   y += 6;

@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { getTeacherProjects, approveProject, rejectProject } from '../../utils/api';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { downloadReport } from '../../utils/downloadReport';
 import { PROJECT_DOMAINS, YEARS, SDG_GOALS, PO_LIST } from '../../utils/constants';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
-import { Eye, Check, X, Download, XCircle, FileText, Award, ExternalLink } from 'lucide-react';
+import { ProjectScreenshotsGallery, ProjectCertificateLink } from '../../components/common/ProjectAttachments';
+import { Eye, Check, X, Download, XCircle, FileText } from 'lucide-react';
 
 export default function ProjectMonitoring() {
   const { profile } = useAuth();
@@ -27,9 +29,9 @@ export default function ProjectMonitoring() {
     setLoading(true);
     try {
       const data = await getTeacherProjects(profile.user_id);
-      setProjects(data);
-    } catch {
-      toast.error('Failed to load projects');
+      setProjects(data || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -71,22 +73,39 @@ export default function ProjectMonitoring() {
   };
 
   const handleApprove = async (id) => {
+    if (!profile?.is_approved) {
+      toast.error('Your faculty account is pending administrator approval. Evaluation actions are disabled.');
+      return;
+    }
     try {
       await approveProject(id, remarks);
-      toast.success('Project Approved');
-      setShowModal(false); setRemarks('');
+      toast.success('Project Approved successfully');
+      setShowModal(false);
+      setRemarks('');
       await fetchProjects();
-    } catch(e) { toast.error(e.message); }
+    } catch (e) {
+      toast.error(e.message || 'Failed to approve project');
+    }
   };
 
   const handleReject = async (id) => {
-    if(!remarks.trim()) { toast.error("Remarks required for rejection"); return; }
+    if (!profile?.is_approved) {
+      toast.error('Your faculty account is pending administrator approval. Evaluation actions are disabled.');
+      return;
+    }
+    if (!remarks.trim()) {
+      toast.error('Remarks are required when rejecting a project.');
+      return;
+    }
     try {
       await rejectProject(id, remarks);
-      toast.success('Project Rejected');
-      setShowModal(false); setRemarks('');
+      toast.success('Project Rejected with feedback');
+      setShowModal(false);
+      setRemarks('');
       await fetchProjects();
-    } catch(e) { toast.error(e.message); }
+    } catch (e) {
+      toast.error(e.message || 'Failed to reject project');
+    }
   };
 
   if (loading) {
@@ -259,15 +278,7 @@ export default function ProjectMonitoring() {
 
               {selectedProject.screenshot_urls && selectedProject.screenshot_urls.length > 0 && (
                 <div className="bg-white p-4 rounded-md border border-gray-200/90 shadow-2xs">
-                  <span className="block text-[11px] uppercase font-medium text-gray-500 mb-2">Project Screenshots</span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {selectedProject.screenshot_urls.map((url, idx) => (
-                      <a key={idx} href={url} target="_blank" rel="noreferrer" className="block rounded-md overflow-hidden border border-gray-200 aspect-video group relative">
-                        <img src={url} alt="Screenshot" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] text-white font-medium">View</div>
-                      </a>
-                    ))}
-                  </div>
+                  <ProjectScreenshotsGallery rawUrls={selectedProject.screenshot_urls} colsClass="grid-cols-2 sm:grid-cols-4" />
                 </div>
               )}
 
@@ -285,16 +296,7 @@ export default function ProjectMonitoring() {
                     View Auto-Generated Report
                   </button>
                   {selectedProject.document_url && (
-                    <a
-                      href={selectedProject.document_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-900 text-xs font-medium rounded-md transition w-fit shadow-2xs"
-                    >
-                      <Award className="w-3.5 h-3.5 text-amber-700" />
-                      <span>{selectedProject.type?.includes('Hackathon') ? 'View Hackathon Certificate / Proof' : 'Open Attached Document'}</span>
-                      <ExternalLink className="w-3 h-3 text-amber-600 ml-0.5" />
-                    </a>
+                    <ProjectCertificateLink rawUrl={selectedProject.document_url} type={selectedProject.type} />
                   )}
                 </div>
               </div>

@@ -56,7 +56,7 @@ export const downloadStatisticalReportPDF = async ({
 
   const pageWidth = doc.internal.pageSize.getWidth(); // 210mm
   const margin = 12;
-  const printableWidth = pageWidth - margin * 2; // 186mm
+  const _printableWidth = pageWidth - margin * 2; // 186mm
 
   // Fetch logos
   const [jspmImg, rscoeImg] = await Promise.all([

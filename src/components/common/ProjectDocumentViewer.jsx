@@ -1,16 +1,19 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import jspmLogo from '../../assets/jspm_logo.jpeg';
 import rscoeLogo from '../../assets/rscoe_logo.png';
 import { SDG_GOALS } from '../../utils/constants';
+import { useSignedUrls } from '../../utils/storageUtils';
 
 export default function ProjectDocumentViewer({ project, onClose }) {
+  const rawScreenshots = project?.screenshot_urls || (project?.document_url ? [project.document_url] : []);
+  const { urls: screenshots, loading: screenshotsLoading } = useSignedUrls(rawScreenshots);
+
   if (!project) return null;
 
   const members = project.team_members || [];
   const sdgGoals = project.sdg_goals || [];
   const pos = project.pos || [];
-  const screenshots = project.screenshot_urls || (project.document_url ? [project.document_url] : []);
 
   const sdgLabel = sdgGoals
     .map(id => {
@@ -185,7 +188,12 @@ export default function ProjectDocumentViewer({ project, onClose }) {
               <div>
                 {fieldLabel('Project Screenshots')}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '12px' }}>
-                  {screenshots.length > 0 ? (
+                  {screenshotsLoading ? (
+                    <div style={{ gridColumn: '1 / -1', padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#6B7280' }}>
+                      <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                      <span style={{ fontSize: '12px', fontStyle: 'italic' }}>Loading secure attachment preview...</span>
+                    </div>
+                  ) : screenshots.length > 0 ? (
                     screenshots.map((url, idx) => (
                       <div key={idx} style={{ padding: '8px', border: '1px solid #E5E7EB', backgroundColor: '#FCFCFD', borderRadius: '6px' }}>
                         <img
@@ -200,7 +208,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                     ))
                   ) : (
                     <div style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center', backgroundColor: '#F9FAFB', border: '1px dashed #D1D5DB', borderRadius: '4px', color: '#6B7280', fontStyle: 'italic', fontSize: '13px' }}>
-                      No project screenshots available.
+                      {rawScreenshots.length > 0 ? 'Unable to load private screenshots. Please ensure you are authorized.' : 'No project screenshots available.'}
                     </div>
                   )}
                 </div>

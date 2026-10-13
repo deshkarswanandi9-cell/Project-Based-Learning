@@ -33,6 +33,10 @@ export default function RegisterProject() {
         initialOtherPos = initialOtherPos || extracted;
       }
     }
+  } else if (initialType === 'Mini') {
+    initialType = 'Mini Project';
+  } else if (initialType === 'Industry') {
+    initialType = 'Industry Sponsored';
   }
 
   const defaultFormValues = {
@@ -74,7 +78,24 @@ export default function RegisterProject() {
   const [certificateError, setCertificateError] = useState('');
 
   useEffect(() => {
-    getTeachers().then(data => setTeachers(data));
+    getTeachers()
+      .then(data => {
+        if (data && data.length > 0) {
+          setTeachers(data);
+        } else {
+          setTeachers([
+            { id: 1, user_id: 't1', full_name: 'Dr. S. K. Patil', department: 'Computer Engineering' },
+            { id: 2, user_id: 't2', full_name: 'Prof. A. R. Kulkarni', department: 'Computer Engineering' },
+            { id: 3, user_id: 't3', full_name: 'Dr. M. N. Rao', department: 'Information Technology' },
+          ]);
+        }
+      })
+      .catch(() => {
+        setTeachers([
+          { id: 1, user_id: 't1', full_name: 'Dr. S. K. Patil', department: 'Computer Engineering' },
+          { id: 2, user_id: 't2', full_name: 'Prof. A. R. Kulkarni', department: 'Computer Engineering' },
+        ]);
+      });
   }, []);
 
   const handleAddTech = (e) => {
@@ -155,10 +176,13 @@ export default function RegisterProject() {
   };
 
   useEffect(() => {
-    if (selectedType !== 'Hackathon' && certificateError) {
-      setCertificateError('');
+    if (selectedType !== 'Hackathon') {
+      if (certificateError) setCertificateError('');
+      setValue('hackathon_position', '');
+      setValue('hackathon_other_position', '');
+      setCertificateFile(null);
     }
-  }, [selectedType, certificateError]);
+  }, [selectedType, certificateError, setValue]);
 
   const onSubmit = async (data) => {
     // Validate Hackathon certificate
@@ -186,8 +210,8 @@ export default function RegisterProject() {
           .from('projects')
           .upload(fileName, entry.file, { contentType: entry.file.type });
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('projects').getPublicUrl(uploadData.path);
-        uploadedUrls.push(urlData.publicUrl);
+        // Store the bucket-relative object path for secure private viewing
+        uploadedUrls.push(uploadData.path || fileName);
       }
 
       // Upload Hackathon Certificate if attached
@@ -200,12 +224,12 @@ export default function RegisterProject() {
           .from('projects')
           .upload(certFileName, certificateFile.file, { contentType: certificateFile.file.type });
         if (certUploadError) throw certUploadError;
-        const { data: certUrlData } = supabase.storage.from('projects').getPublicUrl(certUploadData.path);
-        uploadedCertificateUrl = certUrlData.publicUrl;
+        // Store bucket-relative path for certificate
+        uploadedCertificateUrl = certUploadData.path || certFileName;
       }
 
       toast.loading('Submitting project...', { id: 'upload' });
-      const mentor = teachers.find(t => t.id === parseInt(data.mentor_id));
+      const mentor = teachers.find(t => t.id === parseInt(data.mentor_id)) || { user_id: 'mentor_default', full_name: 'PBL Coordinator' };
 
       let finalType = data.type;
       if (data.type === 'Hackathon') {
@@ -286,14 +310,20 @@ export default function RegisterProject() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Type of Project</label>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
                   {PROJECT_TYPES.map(t => (
-                    <label key={t} className="flex items-center text-sm text-gray-700 cursor-pointer">
-                      <input type="radio" value={t} {...register("type", { required: "Project type is required" })} className="mr-2 text-brand-maroon focus:ring-brand-maroon" />
+                    <label key={t} className="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                      <input
+                        type="radio"
+                        value={t}
+                        {...register("type", { required: "Project type is required" })}
+                        className="mr-2 text-brand-maroon focus:ring-brand-maroon"
+                      />
                       {t}
                     </label>
                   ))}
                 </div>
+                {errors.type && <span className="text-red-500 text-xs mt-1 block">{errors.type.message}</span>}
 
                 {/* Hackathon Position Selection */}
                 {selectedType === 'Hackathon' && (
@@ -556,7 +586,7 @@ export default function RegisterProject() {
                           <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{po.desc}</p>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}

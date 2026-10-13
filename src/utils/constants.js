@@ -48,7 +48,13 @@ export const PROJECT_DOMAINS = [
   'Cybersecurity','Data Science','Mobile App',
   'Cloud Computing','Blockchain','Other'
 ];
-export const PROJECT_TYPES  = ['Mini','Capstone Project','Industry','Hackathon'];
+export const PROJECT_TYPES = [
+  'Mini Project',
+  'Micro Project',
+  'Complex Engineering',
+  'Industry Sponsored',
+  'Hackathon'
+];
 export const DEPARTMENTS    = ['Computer Engineering','Information Technology','ENTC Engineering','Mechanical Engineering','Civil Engineering','Electrical Engineering'];
 export const YEARS          = ['1st Year','2nd Year','3rd Year','4th Year'];
 export const SEMESTERS      = ['Sem I','Sem II','Sem III','Sem IV','Sem V','Sem VI','Sem VII','Sem VIII'];

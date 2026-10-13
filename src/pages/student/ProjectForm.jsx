@@ -80,17 +80,17 @@ export default function ProjectForm() {
     setErrorMsg('');
 
     try {
-      // 1. Upload all screenshots and collect URLs
+      // 1. Upload all screenshots and collect object paths
       const screenshotUrls = [];
       for (const file of screenshots) {
         const ext = file.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from('projects')
           .upload(fileName, file);
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('projects').getPublicUrl(fileName);
-        screenshotUrls.push(urlData.publicUrl);
+        // Store bucket-relative object path for secure private viewing
+        screenshotUrls.push(uploadData.path || fileName);
       }
 
       // 2. Prepare project data
