@@ -47,6 +47,7 @@ export const downloadStatisticalReportPDF = async ({
   projects = [],
   profile = {},
   sdgCounts = {},
+  academicYear: paramAy,
 }) => {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -72,10 +73,12 @@ export const downloadStatisticalReportPDF = async ({
   });
   const dateSlug = now.toISOString().split('T')[0];
   const coordinatorName = profile?.full_name || 'PBL Coordinator';
-  const deptName = profile?.department || 'Department of Computer Engineering';
+  const deptName = profile?.department?.startsWith('Department of')
+    ? profile.department
+    : 'Department of Computer Engineering';
 
   // 1. ADD LOGOS (Header)
-  const logoH = 17;
+  const logoH = 18;
   if (jspmImg?.dataUrl) {
     const w = logoH * (jspmImg.width / jspmImg.height);
     doc.addImage(jspmImg.dataUrl, 'PNG', margin, 10, w, logoH);
@@ -85,45 +88,55 @@ export const downloadStatisticalReportPDF = async ({
     doc.addImage(rscoeImg.dataUrl, 'PNG', pageWidth - margin - w, 10, w, logoH);
   }
 
-  // 2. COLLEGE HEADER TEXT
+  // 2. COLLEGE HEADER TEXT (Official Letterhead)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(10.5);
   doc.setTextColor(20, 20, 20);
-  doc.text("JSPM'S RAJARSHI SHAHU COLLEGE OF ENGINEERING", pageWidth / 2, 14, { align: 'center' });
+  doc.text("JSPM’s", pageWidth / 2, 11, { align: 'center' });
+
+  doc.setFontSize(12);
+  doc.text("Rajarshi Shahu College of Engineering, Tathawade Pune-33", pageWidth / 2, 15.5, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(90, 90, 90);
-  doc.text('(An Autonomous Institute Affiliated to Savitribai Phule Pune University, Pune)', pageWidth / 2, 18, { align: 'center' });
+  doc.setFontSize(8.2);
+  doc.setTextColor(70, 70, 70);
+  doc.text("(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University, Pune)", pageWidth / 2, 19.5, { align: 'center' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.setTextColor(45, 45, 45);
-  doc.text(deptName.toUpperCase(), pageWidth / 2, 22.5, { align: 'center' });
+  doc.setTextColor(20, 20, 20);
+  doc.text(deptName, pageWidth / 2, 24, { align: 'center' });
+
+  // Academic Year directly below Department of Computer Engineering
+  const ay = paramAy || profile?.academic_year || projects.find(p => p.academic_year)?.academic_year || '2025-26';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`Academic Year: ${ay}`, pageWidth / 2, 28, { align: 'center' });
 
   // Report Title (Maroon Banner text)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(138, 58, 58); // Maroon #8a3a3a
-  doc.text('PROJECT BASED LEARNING – STATISTICAL REPORT', pageWidth / 2, 28, { align: 'center' });
+  doc.text('PROJECT BASED LEARNING – STATISTICAL REPORT', pageWidth / 2, 34, { align: 'center' });
 
   // Metadata Subtitle
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
   doc.text(
-    `Academic Year: 2026–2027   |   Generated On: ${dateFormatted}   |   PBL Coordinator: ${coordinatorName}`,
+    `Generated On: ${dateFormatted}   |   PBL Coordinator: ${coordinatorName}`,
     pageWidth / 2,
-    33,
+    39,
     { align: 'center' }
   );
 
   // Horizontal Maroon Divider
   doc.setDrawColor(138, 58, 58);
   doc.setLineWidth(0.6);
-  doc.line(margin, 36, pageWidth - margin, 36);
+  doc.line(margin, 42, pageWidth - margin, 42);
 
-  let currentY = 41;
+  let currentY = 47;
   const totalProjects = stats.total || projects.length || 0;
 
   // Helper for section headings in PDF

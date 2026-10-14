@@ -1,0 +1,23 @@
+[
+  {
+    "psoNumber": 1,
+    "id": "PSO1",
+    "title": "Software Systems and Computing",
+    "name": "Software Systems and Computing",
+    "description": "Graduates will be able to analyze, design, develop, and evaluate efficient software and computing systems by applying Computer Engineering fundamentals, software engineering principles, and modern development tools."
+  },
+  {
+    "psoNumber": 2,
+    "id": "PSO2",
+    "title": "Intelligent and Emerging Technologies",
+    "name": "Intelligent and Emerging Technologies",
+    "description": "Graduates will be able to develop secure, scalable, and intelligent solutions using emerging technologies such as Artificial Intelligence, Data Science, Cloud Computing, Cyber Security and related emerging technologies."
+  },
+  {
+    "psoNumber": 3,
+    "id": "PSO3",
+    "title": "Innovation, Research, and Entrepreneurship",
+    "name": "Innovation, Research, and Entrepreneurship",
+    "description": "Graduates will be able to apply research methodologies, emerging technologies, and entrepreneurial skills to design, develop, and validate innovative computing solutions for complex engineering problems."
+  }
+]

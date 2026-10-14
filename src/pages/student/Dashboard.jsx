@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMyProject } from '../../utils/api';
 import DashboardLayout from '../../components/common/DashboardLayout';
-import { PO_LIST, SDG_GOALS } from '../../utils/constants';
+import { PO_LIST, PSO_LIST, SDG_GOALS, normalizePsos } from '../../utils/constants';
 import { downloadReport } from '../../utils/downloadReport';
 import { Clock, FolderOpen, CheckCircle, XCircle } from 'lucide-react';
 
@@ -136,6 +136,28 @@ export default function StudentDashboard() {
                 );
               })}
             </div>
+          </div>
+
+          {/* SECTION 6 - Programme Specific Outcomes (PSOs) */}
+          <div className="bg-white p-5 rounded-md shadow-2xs border border-gray-200/90 col-span-1 lg:col-span-2">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Programme Specific Outcomes (PSOs)</h3>
+            {project.psos === undefined ? (
+              <p className="text-xs text-amber-700 italic">Notice: PSO mapping is pending database column migration (supabase_add_psos_column.sql).</p>
+            ) : (
+              <>
+                <p className="text-xs text-gray-500 mb-3">{normalizePsos(project.psos).length} / {PSO_LIST.length} PSOs addressed</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PSO_LIST.map(pso => {
+                    const mapped = normalizePsos(project.psos).includes(pso.id);
+                    return (
+                      <span key={pso.id} title={`${pso.id}: ${pso.title}`} className={`px-2.5 py-1 text-xs font-medium rounded-md border ${mapped ? 'bg-brand-maroon text-white border-brand-maroon' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                        {pso.id}
+                      </span>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

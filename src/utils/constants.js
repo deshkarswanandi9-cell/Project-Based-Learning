@@ -43,6 +43,84 @@ export const PO_LIST = [
     desc:'Recognize the need for independent and life-long learning, adaptability to new technologies and critical thinking.' },
 ];
 
+export const PSO_LIST = [
+  {
+    id: 'PSO1',
+    psoNumber: 1,
+    title: 'Software Systems and Computing',
+    desc: 'Graduates will be able to analyze, design, develop, and evaluate efficient software and computing systems by applying Computer Engineering fundamentals, software engineering principles, and modern development tools.'
+  },
+  {
+    id: 'PSO2',
+    psoNumber: 2,
+    title: 'Intelligent and Emerging Technologies',
+    desc: 'Graduates will be able to develop secure, scalable, and intelligent solutions using emerging technologies such as Artificial Intelligence, Data Science, Cloud Computing, Cyber Security and related emerging technologies.'
+  },
+  {
+    id: 'PSO3',
+    psoNumber: 3,
+    title: 'Innovation, Research, and Entrepreneurship',
+    desc: 'Graduates will be able to apply research methodologies, emerging technologies, and entrepreneurial skills to design, develop, and validate innovative computing solutions for complex engineering problems.'
+  }
+];
+
+/**
+ * Normalizes raw PSO input into a clean string array of PSO IDs (e.g., ['PSO1', 'PSO2']).
+ * Safely handles string representations (JSON strings, Postgres array formats), arrays of objects, or empty inputs.
+ */
+export const normalizePsos = (rawPsos) => {
+  if (!rawPsos) return [];
+  if (Array.isArray(rawPsos)) {
+    return rawPsos
+      .map(p => (typeof p === 'object' && p !== null ? (p.id || p.pso) : String(p).trim()))
+      .filter(Boolean);
+  }
+  if (typeof rawPsos === 'string') {
+    const trimmed = rawPsos.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(String).map(s => s.trim()).filter(Boolean);
+      } catch { /* fallback */ }
+    }
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return trimmed.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+    }
+    return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+/**
+ * Resolves a PSO identifier (like 'PSO1', 'PSO2', '1', or { id: 'PSO1' }) to its official full catalog object.
+ */
+export const resolvePsoDetails = (psoInput) => {
+  if (!psoInput) return null;
+  const rawId = typeof psoInput === 'object' && psoInput !== null ? (psoInput.id || psoInput.pso) : String(psoInput).trim();
+  const num = rawId.replace(/\D/g, '');
+  const match = PSO_LIST.find(p => 
+    p.id.toUpperCase() === rawId.toUpperCase() || 
+    p.id === `PSO${num}` || 
+    String(p.psoNumber) === num
+  );
+  if (match) {
+    return {
+      id: match.id,
+      psoNumber: match.psoNumber,
+      title: match.title,
+      desc: match.desc
+    };
+  }
+  return {
+    id: rawId.startsWith('PSO') ? rawId : `PSO${rawId}`,
+    psoNumber: num ? parseInt(num, 10) : null,
+    title: rawId,
+    desc: ''
+  };
+};
+
+
 export const PROJECT_DOMAINS = [
   'AI/ML','Web Development','DevOps','IoT',
   'Cybersecurity','Data Science','Mobile App',
@@ -51,7 +129,7 @@ export const PROJECT_DOMAINS = [
 export const PROJECT_TYPES = [
   'Mini Project',
   'Micro Project',
-  'Complex Engineering',
+  'Complex Engineering Problems',
   'Industry Sponsored',
   'Hackathon'
 ];

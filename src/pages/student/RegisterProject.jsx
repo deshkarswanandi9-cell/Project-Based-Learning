@@ -5,51 +5,71 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { getTeachers, registerProject, supabase } from '../../utils/api';
-import { PROJECT_DOMAINS, PROJECT_TYPES, SDG_GOALS, PO_LIST, SEMESTERS, ACADEMIC_YEARS } from '../../utils/constants';
-import { Check, XCircle, AlertCircle, Camera, X as XIcon, Award, Paperclip, FileText } from 'lucide-react';
+import { PROJECT_DOMAINS, PROJECT_TYPES, SDG_GOALS, PO_LIST, PSO_LIST, SEMESTERS, ACADEMIC_YEARS } from '../../utils/constants';
+import { getSdgLogo } from '../../utils/sdgLogos';
+import { Check, XCircle, AlertCircle, Camera, X as XIcon, Award, Paperclip, FileText, Eye } from 'lucide-react';
+import AIRecommendationsSection from '../../components/student/AIRecommendationsSection';
+import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 
 export default function RegisterProject() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   
   // Read from session storage if available
   const savedDraft = JSON.parse(sessionStorage.getItem('registerProjectDraft'));
 
   let initialType = savedDraft?.type || '';
   let initialHackathonPos = savedDraft?.hackathon_position || '';
-  let initialOtherPos = savedDraft?.hackathon_other_position || '';
+  let initialAwardType = savedDraft?.hackathon_award_type || '';
 
   if (initialType.startsWith('Hackathon')) {
     const match = initialType.match(/^Hackathon\s*\((.*)\)$/);
     if (match) {
       initialType = 'Hackathon';
       const extracted = match[1];
-      if (['1st', '2nd', '3rd'].includes(extracted)) {
+      if (['1st', '2nd', '3rd', 'Participant'].includes(extracted)) {
         initialHackathonPos = initialHackathonPos || extracted;
+      } else if (extracted.includes('Consolation')) {
+        initialHackathonPos = initialHackathonPos || 'Other';
+        initialAwardType = initialAwardType || 'Consolation';
+      } else if (extracted.includes('Special Mention')) {
+        initialHackathonPos = initialHackathonPos || 'Other';
+        initialAwardType = initialAwardType || 'Special Mention';
       } else {
         initialHackathonPos = initialHackathonPos || 'Other';
-        initialOtherPos = initialOtherPos || extracted;
       }
     }
   } else if (initialType === 'Mini') {
     initialType = 'Mini Project';
   } else if (initialType === 'Industry') {
     initialType = 'Industry Sponsored';
+  } else if (initialType === 'Complex Engineering') {
+    initialType = 'Complex Engineering Problems';
   }
 
   const defaultFormValues = {
     title: '', domain: '', description: '', github_link: '', linkedin_link: '',
+    faculty_mentor_name: savedDraft?.faculty_mentor_name || '',
     semester: '', academic_year: '', mentor_id: '',
     team_members: [{ name: '', rollNumber: '', rbtNumber: '' }],
     sdg_goals: [],
     pos: [],
+    psos: [],
     technologies: [],
     ...(savedDraft || {}),
     type: initialType || savedDraft?.type || '',
+    hackathon_title: savedDraft?.hackathon_title || '',
     hackathon_position: initialHackathonPos || savedDraft?.hackathon_position || '',
-    hackathon_other_position: initialOtherPos || savedDraft?.hackathon_other_position || ''
+    hackathon_award_type: initialAwardType || savedDraft?.hackathon_award_type || '',
+    achievement_title: savedDraft?.achievement_title || '',
+    achievement_description: savedDraft?.achievement_description || '',
+    city: savedDraft?.city || '',
+    state: savedDraft?.state || '',
+    pincode: savedDraft?.pincode || '',
+    venue_details: savedDraft?.venue_details || ''
   };
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm({
@@ -59,15 +79,95 @@ export default function RegisterProject() {
   const formValues = watch();
   const selectedType = watch('type');
   const selectedHackathonPos = watch('hackathon_position');
+  const selectedAwardType = watch('hackathon_award_type');
+  const watchedAchievementDesc = watch('achievement_description') || '';
+
+  // Helper function to count words accurately
+  const countWords = (text) => {
+    if (!text) return 0;
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).filter(Boolean).length;
+  };
+
+  const achievementWordCount = countWords(watchedAchievementDesc);
 
   // Save draft whenever form values change
   useEffect(() => {
     sessionStorage.setItem('registerProjectDraft', JSON.stringify(formValues));
   }, [formValues]);
 
+  // Clean stale fields when position changes away from 'Other'
+  useEffect(() => {
+    if (selectedHackathonPos !== 'Other') {
+      setValue('hackathon_award_type', '');
+      setValue('achievement_title', '');
+      setValue('achievement_description', '');
+    }
+  }, [selectedHackathonPos, setValue]);
+
+  // Clean stale achievement fields when award type is not 'Special Mention'
+  useEffect(() => {
+    if (selectedAwardType !== 'Special Mention') {
+      setValue('achievement_title', '');
+      setValue('achievement_description', '');
+    }
+  }, [selectedAwardType, setValue]);
+
   const { fields, append, remove } = useFieldArray({ control, name: 'team_members' });
   const [techInput, setTechInput] = useState('');
   const technologies = watch('technologies');
+  const watchedTitle = watch('title') || '';
+  const watchedDescription = watch('description') || '';
+  const watchedDomain = watch('domain') || '';
+  const watchedSDGs = watch('sdg_goals') || [];
+  const watchedPOs = watch('pos') || [];
+  const watchedPSOs = watch('psos') || [];
+
+  const handleAcceptSDG = (sdgNum) => {
+    const current = watch('sdg_goals') || [];
+    if (!current.includes(sdgNum)) {
+      setValue('sdg_goals', [...current, sdgNum], { shouldValidate: true, shouldDirty: true });
+      toast.success(`SDG ${sdgNum} added to project selections.`);
+    }
+  };
+
+  const handleAcceptPO = (poId) => {
+    const current = watch('pos') || [];
+    if (!current.includes(poId)) {
+      setValue('pos', [...current, poId], { shouldValidate: true, shouldDirty: true });
+      toast.success(`${poId} added to project selections.`);
+    }
+  };
+
+  const handleAcceptPSO = (psoId) => {
+    const current = watch('psos') || [];
+    if (!current.includes(psoId)) {
+      setValue('psos', [...current, psoId], { shouldValidate: true, shouldDirty: true });
+      toast.success(`${psoId} added to project selections.`);
+    }
+  };
+
+  const handleAcceptAllSDGs = (sdgNumbers) => {
+    const current = watch('sdg_goals') || [];
+    const merged = Array.from(new Set([...current, ...sdgNumbers]));
+    setValue('sdg_goals', merged, { shouldValidate: true, shouldDirty: true });
+    toast.success('Recommended SDGs added to project.');
+  };
+
+  const handleAcceptAllPOs = (poIds) => {
+    const current = watch('pos') || [];
+    const merged = Array.from(new Set([...current, ...poIds]));
+    setValue('pos', merged, { shouldValidate: true, shouldDirty: true });
+    toast.success('Recommended POs added to project.');
+  };
+
+  const handleAcceptAllPSOs = (psoIds) => {
+    const current = watch('psos') || [];
+    const merged = Array.from(new Set([...current, ...psoIds]));
+    setValue('psos', merged, { shouldValidate: true, shouldDirty: true });
+    toast.success('Recommended PSOs added to project.');
+  };
 
   // Screenshot state
   const [screenshots, setScreenshots] = useState([]);  // Array of { file, preview }
@@ -178,17 +278,81 @@ export default function RegisterProject() {
   useEffect(() => {
     if (selectedType !== 'Hackathon') {
       if (certificateError) setCertificateError('');
+      setValue('hackathon_title', '');
       setValue('hackathon_position', '');
-      setValue('hackathon_other_position', '');
+      setValue('hackathon_award_type', '');
+      setValue('achievement_title', '');
+      setValue('achievement_description', '');
+      setValue('location_mode', 'In-Person / Physical Venue');
+      setValue('city', '');
+      setValue('state', '');
+      setValue('pincode', '');
+      setValue('venue_details', '');
       setCertificateFile(null);
     }
   }, [selectedType, certificateError, setValue]);
 
   const onSubmit = async (data) => {
-    // Validate Hackathon certificate
-    if (data.type === 'Hackathon' && !certificateFile) {
-      setCertificateError('Please attach a proof / certificate for the Hackathon.');
-      return;
+    // Validate Hackathon fields
+    if (data.type === 'Hackathon') {
+      if (!certificateFile) {
+        setCertificateError('Please attach a proof / certificate for the Hackathon.');
+        return;
+      }
+      if (!data.hackathon_title || !data.hackathon_title.trim()) {
+        toast.error('Hackathon title is required.');
+        return;
+      }
+      if (!data.hackathon_position) {
+        toast.error('Please select your position secured in the Hackathon.');
+        return;
+      }
+      if (data.hackathon_position === 'Other' && !data.hackathon_award_type) {
+        toast.error('Please select an Award / Recognition Type (Consolation or Special Mention).');
+        return;
+      }
+      if (data.hackathon_position === 'Other' && data.hackathon_award_type === 'Special Mention') {
+        if (!data.achievement_title || !data.achievement_title.trim()) {
+          toast.error('Achievement title is required for Special Mention.');
+          return;
+        }
+        if (!data.achievement_description || !data.achievement_description.trim()) {
+          toast.error('Achievement description is required for Special Mention.');
+          return;
+        }
+        const descWords = countWords(data.achievement_description);
+        if (descWords > 100) {
+          toast.error(`Achievement description exceeds 100 words (${descWords} words). Please shorten it.`);
+          return;
+        }
+      }
+      if (data.location_mode === 'In-Person / Physical Venue') {
+        if (!data.city || !data.city.trim()) {
+          toast.error('City is required for in-person hackathons.');
+          return;
+        }
+        if (!data.state || !data.state.trim()) {
+          toast.error('State is required for in-person hackathons.');
+          return;
+        }
+        if (!data.pincode || !data.pincode.trim()) {
+          toast.error('PIN code is required for in-person hackathons.');
+          return;
+        }
+        if (!/^[1-9][0-9]{5}$/.test(data.pincode.trim())) {
+          toast.error('Invalid PIN code. Indian postal codes must be exactly 6 digits (e.g. 411033).');
+          return;
+        }
+        if (!data.venue_details || !data.venue_details.trim()) {
+          toast.error('Manual venue / location details are required for in-person hackathons.');
+          return;
+        }
+      } else if (data.location_mode === 'Online / Virtual') {
+        if (!data.venue_details || !data.venue_details.trim()) {
+          toast.error('Online platform or event location details are required.');
+          return;
+        }
+      }
     }
     setCertificateError('');
 
@@ -231,22 +395,59 @@ export default function RegisterProject() {
       toast.loading('Submitting project...', { id: 'upload' });
       const mentor = teachers.find(t => t.id === parseInt(data.mentor_id)) || { user_id: 'mentor_default', full_name: 'PBL Coordinator' };
 
+      // Sanitize hackathon payload: Ensure hidden conditional values never leak
       let finalType = data.type;
+      let hackathonData = {
+        hackathon_title: null,
+        hackathon_position: null,
+        hackathon_award_type: null,
+        achievement_title: null,
+        achievement_description: null,
+        location_mode: null,
+        city: null,
+        state: null,
+        pincode: null,
+        venue_details: null
+      };
+
       if (data.type === 'Hackathon') {
-        const posText = data.hackathon_position === 'Other'
-          ? (data.hackathon_other_position?.trim() || 'Other')
-          : data.hackathon_position;
+        const pos = data.hackathon_position;
+        const award = pos === 'Other' ? data.hackathon_award_type : null;
+        const isSpecialMention = pos === 'Other' && award === 'Special Mention';
+        const isOnline = data.location_mode === 'Online / Virtual';
+
+        const posText = pos === 'Other'
+          ? (award ? `${pos} - ${award}` : 'Other')
+          : pos;
         finalType = posText ? `Hackathon (${posText})` : 'Hackathon';
+
+        hackathonData = {
+          hackathon_title: data.hackathon_title?.trim() || null,
+          hackathon_position: pos,
+          hackathon_award_type: award || null,
+          achievement_title: isSpecialMention ? (data.achievement_title?.trim() || null) : null,
+          achievement_description: isSpecialMention ? (data.achievement_description?.trim() || null) : null,
+          location_mode: data.location_mode || 'In-Person / Physical Venue',
+          city: isOnline ? null : (data.city?.trim() || null),
+          state: isOnline ? null : (data.state?.trim() || null),
+          pincode: isOnline ? null : (data.pincode?.trim() || null),
+          venue_details: data.venue_details?.trim() || null
+        };
       }
 
-      await registerProject({
-        title: data.title,
+      // Validate PSOs strictly against official RSCOE definitions
+      const validPsos = (data.psos || []).filter(p => ['PSO1', 'PSO2', 'PSO3'].includes(p));
+
+      const projectPayload = {
+        title: data.title?.trim(),
         type: finalType,
         domain: data.domain,
+        faculty_mentor_name: data.faculty_mentor_name?.trim() || null,
         description: data.description,
         technologies: data.technologies,
         sdg_goals: data.sdg_goals.map(Number),
         pos: data.pos,
+        psos: validPsos,
         mentor_id: mentor.user_id,
         mentor_name: mentor.full_name,
         student_id: profile.user_id,
@@ -257,10 +458,86 @@ export default function RegisterProject() {
         screenshot_urls: uploadedUrls,
         document_url: uploadedCertificateUrl,
         team_members: data.team_members,
-        status: 'Pending'
-      });
+        status: 'Pending',
+        ...hackathonData
+      };
 
-      toast.success('Project submitted for approval!', { id: 'upload' });
+      let missingColumnsEncountered = [];
+      const potentialNewCols = [
+        'faculty_mentor_name',
+        'psos',
+        'hackathon_title',
+        'hackathon_position',
+        'hackathon_award_type',
+        'achievement_title',
+        'achievement_description',
+        'location_mode',
+        'city',
+        'state',
+        'pincode',
+        'venue_details'
+      ];
+
+      let currentPayload = { ...projectPayload };
+      let registered = false;
+
+      for (let attempt = 0; attempt < 6 && !registered; attempt++) {
+        try {
+          await registerProject(currentPayload);
+          registered = true;
+        } catch (dbErr) {
+          const errMsg = (dbErr?.message || '').toLowerCase();
+          const matchedCols = potentialNewCols.filter(col => errMsg.includes(col));
+          const colsToRemove = matchedCols.length > 0 ? matchedCols : (
+            (errMsg.includes('column') || errMsg.includes('does not exist') || errMsg.includes('schema cache')) ? potentialNewCols : []
+          );
+
+          if (colsToRemove.length === 0) {
+            throw dbErr;
+          }
+
+          console.warn(`[RegisterProject] Attempt ${attempt + 1}: Database projects table lacks pending migration columns. Retrying without unmigrated fields.`, dbErr.message);
+
+          let removedAny = false;
+          colsToRemove.forEach(col => {
+            if (currentPayload[col] !== undefined && currentPayload[col] !== null) {
+              if (Array.isArray(currentPayload[col]) && currentPayload[col].length > 0) {
+                if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+              } else if (typeof currentPayload[col] === 'string' && currentPayload[col].trim()) {
+                if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+              }
+              delete currentPayload[col];
+              removedAny = true;
+            } else if (col in currentPayload) {
+              delete currentPayload[col];
+            }
+          });
+
+          if (!removedAny) {
+            throw dbErr;
+          }
+        }
+      }
+
+      if (missingColumnsEncountered.length > 0) {
+        const labels = missingColumnsEncountered.map(c => {
+          if (c === 'faculty_mentor_name') return 'Faculty Mentor Name';
+          if (c === 'psos') return 'Department PSOs';
+          if (c.startsWith('hackathon_') || c.startsWith('achievement_') || ['city','state','pincode','venue_details','location_mode'].includes(c)) return 'Hackathon / Achievement details';
+          return c;
+        });
+        const uniqueLabels = Array.from(new Set(labels)).join(' and ');
+        toast(
+          `Project registered! Notice: ${uniqueLabels} could not be persisted because the database migration is pending administrator execution.`,
+          {
+            icon: '⚠️',
+            duration: 8000,
+            id: 'upload'
+          }
+        );
+      } else {
+        toast.success('Project submitted for approval!', { id: 'upload' });
+      }
       sessionStorage.removeItem('registerProjectDraft'); // Clear draft on success
       navigate('/student/dashboard');
     } catch (error) {
@@ -280,14 +557,22 @@ export default function RegisterProject() {
               <p className="font-semibold text-xs flex items-center"><XCircle className="w-4 h-4 mr-1.5 shrink-0" /> Please fix the following errors before submitting:</p>
               <ul className="list-disc list-inside text-xs pl-2 space-y-0.5">
                 {errors.title && <li>Project Title is required</li>}
+                {errors.faculty_mentor_name && <li>{errors.faculty_mentor_name.message}</li>}
                 {errors.description && <li>Description must be at least 100 characters</li>}
                 {errors.technologies && <li>Please add at least one technology</li>}
                 {errors.mentor_id && <li>Please select a PBL Coordinator</li>}
                 {screenshotError && <li>{screenshotError}</li>}
                 {selectedType === 'Hackathon' && certificateError && <li>{certificateError}</li>}
                 {errors.type && <li>Project type is required</li>}
+                {errors.hackathon_title && <li>{errors.hackathon_title.message}</li>}
                 {errors.hackathon_position && <li>{errors.hackathon_position.message}</li>}
-                {errors.hackathon_other_position && <li>{errors.hackathon_other_position.message}</li>}
+                {errors.hackathon_award_type && <li>{errors.hackathon_award_type.message}</li>}
+                {errors.achievement_title && <li>{errors.achievement_title.message}</li>}
+                {errors.achievement_description && <li>{errors.achievement_description.message}</li>}
+                {errors.city && <li>{errors.city.message}</li>}
+                {errors.state && <li>{errors.state.message}</li>}
+                {errors.pincode && <li>{errors.pincode.message}</li>}
+                {errors.venue_details && <li>{errors.venue_details.message}</li>}
                 {errors.domain && <li>Project domain is required</li>}
                 {errors.semester && <li>Semester is required</li>}
                 {errors.academic_year && <li>Academic year is required</li>}
@@ -302,8 +587,17 @@ export default function RegisterProject() {
           </div>
           <div className="p-4 sm:p-5 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Project Title</label>
-              <input {...register("title", { required: "Required" })} className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon outline-none text-gray-800" />
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Project Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("title", {
+                  required: "Project Title is required",
+                  validate: v => !!v?.trim() || "Project Title cannot be blank"
+                })}
+                placeholder="e.g. AI-Powered Smart Agriculture System"
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon outline-none text-gray-800"
+              />
               {errors.title && <span className="text-red-500 text-xs mt-0.5 block">{errors.title.message}</span>}
             </div>
 
@@ -325,65 +619,336 @@ export default function RegisterProject() {
                 </div>
                 {errors.type && <span className="text-red-500 text-xs mt-1 block">{errors.type.message}</span>}
 
-                {/* Hackathon Position Selection */}
+                {/* Dedicated Hackathon Details Section */}
                 {selectedType === 'Hackathon' && (
-                  <div className="mt-3.5 p-3.5 bg-amber-50/80 border border-amber-200 rounded-lg animate-in fade-in duration-200">
-                    <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider mb-2">
-                      Position Secured <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-wrap items-center gap-4">
-                      {[
-                        { label: '1st', value: '1st' },
-                        { label: '2nd', value: '2nd' },
-                        { label: '3rd', value: '3rd' },
-                        { label: 'Other', value: 'Other' }
-                      ].map(pos => (
-                        <label key={pos.value} className="flex items-center text-sm font-medium text-gray-800 cursor-pointer">
-                          <input
-                            type="radio"
-                            value={pos.value}
-                            {...register("hackathon_position", {
-                              validate: (v) => {
-                                if (watch('type') === 'Hackathon' && !v) {
-                                  return 'Please select your position in the Hackathon';
-                                }
-                                return true;
-                              }
-                            })}
-                            className="mr-1.5 text-brand-maroon focus:ring-brand-maroon"
-                          />
-                          {pos.label}
-                        </label>
-                      ))}
+                  <div className="mt-4 p-4 bg-amber-50/70 border border-amber-200 rounded-lg space-y-4 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 pb-2 border-b border-amber-200">
+                      <Award className="w-4 h-4 text-brand-maroon" />
+                      <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        Hackathon Details
+                      </h3>
+                    </div>
+                    
+                    {/* A. Hackathon Title */}
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-950 uppercase tracking-wider mb-1">
+                        Hackathon Title <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        {...register("hackathon_title", {
+                          validate: (v) => {
+                            if (watch('type') === 'Hackathon' && (!v || !v.trim())) {
+                              return 'Hackathon title is required';
+                            }
+                            return true;
+                          }
+                        })}
+                        placeholder="Enter the official name of the hackathon"
+                        className="w-full px-3 py-2 text-xs sm:text-sm border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                      />
+                      {errors.hackathon_title && (
+                        <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_title.message}</span>
+                      )}
                     </div>
 
+                    {/* Position Secured Selection */}
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-950 uppercase tracking-wider mb-2">
+                        Position Secured <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                        {[
+                          { label: '1st', value: '1st' },
+                          { label: '2nd', value: '2nd' },
+                          { label: '3rd', value: '3rd' },
+                          { label: 'Participant', value: 'Participant' },
+                          { label: 'Other', value: 'Other' }
+                        ].map(pos => (
+                          <label key={pos.value} className="flex items-center text-xs sm:text-sm font-medium text-gray-800 cursor-pointer">
+                            <input
+                              type="radio"
+                              value={pos.value}
+                              {...register("hackathon_position", {
+                                validate: (v) => {
+                                  if (watch('type') === 'Hackathon' && !v) {
+                                    return 'Please select your position in the Hackathon';
+                                  }
+                                  return true;
+                                }
+                              })}
+                              className="mr-1.5 text-brand-maroon focus:ring-brand-maroon"
+                            />
+                            {pos.label}
+                          </label>
+                        ))}
+                      </div>
+                      {errors.hackathon_position && (
+                        <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_position.message}</span>
+                      )}
+                    </div>
+
+                    {/* Conditional: Award / Recognition Type (When 'Other' is chosen) */}
                     {selectedHackathonPos === 'Other' && (
-                      <div className="mt-3">
-                        <input
-                          type="text"
-                          {...register("hackathon_other_position", {
-                            validate: (v) => {
-                              if (watch('type') === 'Hackathon' && watch('hackathon_position') === 'Other' && (!v || !v.trim())) {
-                                return 'Please type your Hackathon position';
-                              }
-                              return true;
-                            }
-                          })}
-                          placeholder="Type position / award (e.g., Runner Up, Consolation, Special Mention)"
-                          className="w-full px-3 py-2 text-sm border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400"
-                        />
-                        {errors.hackathon_other_position && (
-                          <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_other_position.message}</span>
+                      <div className="p-3 bg-white border border-amber-300 rounded-md animate-in fade-in duration-150">
+                        <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider mb-2">
+                          Award / Recognition Type <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex flex-wrap items-center gap-4">
+                          {[
+                            { label: 'Consolation', value: 'Consolation' },
+                            { label: 'Special Mention', value: 'Special Mention' }
+                          ].map(award => (
+                            <label key={award.value} className="flex items-center text-xs sm:text-sm font-medium text-gray-800 cursor-pointer">
+                              <input
+                                type="radio"
+                                value={award.value}
+                                {...register("hackathon_award_type", {
+                                  validate: (v) => {
+                                    if (watch('type') === 'Hackathon' && watch('hackathon_position') === 'Other' && !v) {
+                                      return 'Please select an Award / Recognition Type';
+                                    }
+                                    return true;
+                                  }
+                                })}
+                                className="mr-1.5 text-brand-maroon focus:ring-brand-maroon"
+                              />
+                              {award.label}
+                            </label>
+                          ))}
+                        </div>
+                        {errors.hackathon_award_type && (
+                          <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_award_type.message}</span>
                         )}
                       </div>
                     )}
 
-                    {errors.hackathon_position && (
-                      <span className="text-red-500 text-xs mt-1 block">{errors.hackathon_position.message}</span>
+                    {/* Conditional: Highlight Your Achievement (When 'Special Mention' is chosen) */}
+                    {selectedHackathonPos === 'Other' && selectedAwardType === 'Special Mention' && (
+                      <div className="p-3.5 bg-amber-100/60 border border-amber-300 rounded-md space-y-3 animate-in fade-in duration-200">
+                        <div className="flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-brand-maroon" />
+                          <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                            Highlight Your Achievement
+                          </h4>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-medium text-gray-800 mb-1">
+                            Achievement Title <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            {...register("achievement_title", {
+                              validate: (v) => {
+                                if (
+                                  watch('type') === 'Hackathon' &&
+                                  watch('hackathon_position') === 'Other' &&
+                                  watch('hackathon_award_type') === 'Special Mention' &&
+                                  (!v || !v.trim())
+                                ) {
+                                  return 'Achievement title is required for Special Mention';
+                                }
+                                return true;
+                              }
+                            })}
+                            placeholder="e.g., Best UI/UX Design, Social Impact Innovation Award"
+                            className="w-full px-3 py-1.5 text-xs sm:text-sm border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                          />
+                          {errors.achievement_title && (
+                            <span className="text-red-500 text-xs mt-1 block">{errors.achievement_title.message}</span>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-xs font-medium text-gray-800">
+                              Achievement Description (Maximum 100 words) <span className="text-red-500">*</span>
+                            </label>
+                            <span
+                              className={`text-[11px] font-semibold ${
+                                achievementWordCount > 100
+                                  ? 'text-red-600 bg-red-100 px-1.5 py-0.5 rounded'
+                                  : 'text-gray-600'
+                              }`}
+                            >
+                              {achievementWordCount} / 100 words
+                            </span>
+                          </div>
+                          <textarea
+                            rows={3}
+                            {...register("achievement_description", {
+                              validate: (v) => {
+                                if (
+                                  watch('type') === 'Hackathon' &&
+                                  watch('hackathon_position') === 'Other' &&
+                                  watch('hackathon_award_type') === 'Special Mention'
+                                ) {
+                                  if (!v || !v.trim()) {
+                                    return 'Achievement description is required for Special Mention';
+                                  }
+                                  const count = countWords(v);
+                                  if (count > 100) {
+                                    return `Achievement description must not exceed 100 words (${count} words entered)`;
+                                  }
+                                }
+                                return true;
+                              }
+                            })}
+                            placeholder="Briefly describe the jury recognition, standout innovation, or criteria that earned this special mention..."
+                            className={`w-full px-3 py-2 text-xs sm:text-sm border rounded-md bg-white focus:outline-none text-gray-800 placeholder-gray-400 ${
+                              achievementWordCount > 100
+                                ? 'border-red-400 focus:ring-2 focus:ring-red-400'
+                                : 'border-amber-300 focus:ring-2 focus:ring-amber-500'
+                            }`}
+                          />
+                          {errors.achievement_description && (
+                            <span className="text-red-500 text-xs mt-1 block">{errors.achievement_description.message}</span>
+                          )}
+                        </div>
+                      </div>
                     )}
 
-                    {/* Hackathon Certificate / Proof Attachment */}
-                    <div className="mt-4 pt-3.5 border-t border-amber-200/90">
+                    {/* B. Hackathon Location */}
+                    <div className="pt-2 border-t border-amber-200">
+                      <label className="block text-xs font-semibold text-amber-950 uppercase tracking-wider mb-2">
+                        B. Hackathon Location <span className="text-red-500">*</span>
+                      </label>
+                      
+                      <div className="mb-3">
+                        <label className="block text-[11px] font-medium text-gray-700 mb-1">Location Mode</label>
+                        <select
+                          {...register("location_mode")}
+                          className="w-full px-3 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800"
+                        >
+                          <option value="In-Person / Physical Venue">In-Person / Physical Venue</option>
+                          <option value="Online / Virtual">Online / Virtual</option>
+                        </select>
+                      </div>
+
+                      {/* In-Person Location Fields */}
+                      {watch('location_mode') !== 'Online / Virtual' ? (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2.5">
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                City <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                {...register("city", {
+                                  validate: (v) => {
+                                    if (watch('type') === 'Hackathon' && watch('location_mode') !== 'Online / Virtual' && (!v || !v.trim())) {
+                                      return 'City is required for in-person hackathons';
+                                    }
+                                    return true;
+                                  }
+                                })}
+                                placeholder="e.g., Pune"
+                                className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                              />
+                              {errors.city && (
+                                <span className="text-red-500 text-[10px] mt-0.5 block">{errors.city.message}</span>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                State <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                {...register("state", {
+                                  validate: (v) => {
+                                    if (watch('type') === 'Hackathon' && watch('location_mode') !== 'Online / Virtual' && (!v || !v.trim())) {
+                                      return 'State is required for in-person hackathons';
+                                    }
+                                    return true;
+                                  }
+                                })}
+                                placeholder="e.g., Maharashtra"
+                                className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                              />
+                              {errors.state && (
+                                <span className="text-red-500 text-[10px] mt-0.5 block">{errors.state.message}</span>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                PIN Code <span className="text-red-500">*</span> <span className="text-[10px] text-gray-500">(Indian 6-digit)</span>
+                              </label>
+                              <input
+                                type="text"
+                                maxLength={6}
+                                {...register("pincode", {
+                                  validate: (v) => {
+                                    if (watch('type') === 'Hackathon' && watch('location_mode') !== 'Online / Virtual') {
+                                      if (!v || !v.trim()) return 'PIN code is required';
+                                      if (!/^[1-9][0-9]{5}$/.test(v.trim())) {
+                                        return 'Must be a valid 6-digit Indian PIN code (e.g. 411033)';
+                                      }
+                                    }
+                                    return true;
+                                  }
+                                })}
+                                placeholder="e.g., 411033"
+                                className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                              />
+                              {errors.pincode && (
+                                <span className="text-red-500 text-[10px] mt-0.5 block">{errors.pincode.message}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                              Manual Venue / Location Details <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              rows={2}
+                              {...register("venue_details", {
+                                validate: (v) => {
+                                  if (watch('type') === 'Hackathon' && watch('location_mode') !== 'Online / Virtual' && (!v || !v.trim())) {
+                                    return 'Manual venue / location details are required';
+                                  }
+                                  return true;
+                                }
+                              })}
+                              placeholder="e.g., Innovation Lab, Example College, Tathawade (building, hall, address details)"
+                              className="w-full px-3 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                            />
+                            {errors.venue_details && (
+                              <span className="text-red-500 text-[10px] mt-0.5 block">{errors.venue_details.message}</span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        /* Online / Virtual Location Field */
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                            Online Platform / Event Location Details <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            {...register("venue_details", {
+                              validate: (v) => {
+                                if (watch('type') === 'Hackathon' && watch('location_mode') === 'Online / Virtual' && (!v || !v.trim())) {
+                                  return 'Online platform name or event URL is required';
+                                }
+                                return true;
+                              }
+                            })}
+                            placeholder="e.g., Unstop Platform, Devfolio, Discord Server, or event URL"
+                            className="w-full px-3 py-1.5 text-xs border border-amber-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 text-gray-800 placeholder-gray-400"
+                          />
+                          {errors.venue_details && (
+                            <span className="text-red-500 text-[10px] mt-0.5 block">{errors.venue_details.message}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 6. Hackathon Certificate / Proof Attachment */}
+                    <div className="pt-3 border-t border-amber-200">
                       <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <Award className="w-3.5 h-3.5 text-amber-700" />
@@ -522,6 +1087,26 @@ export default function RegisterProject() {
           </div>
         </div>
 
+        {/* AI-POWERED SDG, PO & PSO RECOMMENDATIONS */}
+        <AIRecommendationsSection
+          projectData={{
+            title: watchedTitle,
+            description: watchedDescription,
+            type: selectedType,
+            domain: watchedDomain,
+            technologies: technologies || []
+          }}
+          selectedSDGs={watchedSDGs}
+          selectedPOs={watchedPOs}
+          selectedPSOs={watchedPSOs}
+          onAcceptSDG={handleAcceptSDG}
+          onAcceptPO={handleAcceptPO}
+          onAcceptPSO={handleAcceptPSO}
+          onAcceptAllSDGs={handleAcceptAllSDGs}
+          onAcceptAllPOs={handleAcceptAllPOs}
+          onAcceptAllPSOs={handleAcceptAllPSOs}
+        />
+
         {/* SECTION B - SDG GOALS */}
         <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
           <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
@@ -534,22 +1119,75 @@ export default function RegisterProject() {
               name="sdg_goals"
               render={({ field: { value, onChange } }) => (
                 <>
-                  <p className="mb-3 text-xs font-semibold text-gray-600">{value.length} goals selected</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                  <p className="mb-3.5 text-xs font-semibold text-gray-600 flex items-center justify-between">
+                    <span>{value.length} of {SDG_GOALS.length} goals selected</span>
+                    <span className="text-[11px] text-gray-400 font-normal">Click a card to toggle selection</span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-3.5">
                     {SDG_GOALS.map(goal => {
                       const isSelected = value.includes(goal.id);
+                      const logoUrl = getSdgLogo(goal.id);
                       return (
                         <div
                           key={goal.id}
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          tabIndex={0}
                           onClick={() => onChange(isSelected ? value.filter(v => v !== goal.id) : [...value, goal.id])}
-                          className={`cursor-pointer rounded-md p-2.5 h-20 flex flex-col justify-between transition border ${isSelected ? 'border-transparent shadow-xs text-white' : 'border-gray-200 hover:border-gray-300 bg-white text-gray-800'}`}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                              e.preventDefault();
+                              onChange(isSelected ? value.filter(v => v !== goal.id) : [...value, goal.id]);
+                            }
+                          }}
+                          className={`cursor-pointer rounded-lg p-3 sm:p-3.5 min-h-[126px] sm:min-h-[132px] lg:min-h-[138px] flex flex-col justify-between transition border select-none focus:outline-none focus:ring-2 focus:ring-brand-maroon ${
+                            isSelected
+                              ? 'border-transparent shadow-xs text-white ring-1 ring-black/10'
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-xs bg-white text-gray-800'
+                          }`}
                           style={{ backgroundColor: isSelected ? goal.color : 'white' }}
                         >
-                          <div className="flex justify-between items-start">
-                            <span className={`text-base font-bold ${isSelected ? 'text-white/90' : 'text-gray-400'}`}>{goal.id}</span>
-                            {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
+                          {/* Top Row: Larger Logo on left, SDG Number beside logo, Check indicator on right */}
+                          <div className="flex items-start justify-between gap-1.5 mb-2.5">
+                            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                              {logoUrl && (
+                                <img
+                                  src={logoUrl}
+                                  alt={`Official UN SDG ${goal.id} Logo - ${goal.title}`}
+                                  className={`w-[42px] h-[42px] sm:w-[46px] sm:h-[46px] md:w-[48px] md:h-[48px] lg:w-[52px] lg:h-[52px] rounded object-contain shrink-0 border ${
+                                    isSelected
+                                      ? 'border-white/40 bg-white/15'
+                                      : 'border-gray-200 bg-white shadow-2xs'
+                                  }`}
+                                />
+                              )}
+                              <div className="flex flex-col justify-center">
+                                <span className={`text-[10px] font-bold tracking-wider uppercase leading-none ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
+                                  SDG
+                                </span>
+                                <span className={`text-base sm:text-lg font-extrabold leading-tight mt-0.5 ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                                  {goal.id}
+                                </span>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true">
+                                <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                              </div>
+                            )}
                           </div>
-                          <span className={`text-[11px] font-semibold leading-tight line-clamp-2 ${isSelected?'text-white':'text-gray-700'}`}>{goal.title}</span>
+
+                          {/* SDG Title below logo and number */}
+                          <div className="mt-auto pt-1">
+                            <span
+                              className={`text-xs font-semibold leading-snug line-clamp-2 block ${
+                                isSelected ? 'text-white' : 'text-gray-800'
+                              }`}
+                              title={`SDG ${goal.id}: ${goal.title}`}
+                            >
+                              {goal.title}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -594,10 +1232,119 @@ export default function RegisterProject() {
           </div>
         </div>
 
-        {/* SECTION D - MENTOR */}
+        {/* SECTION D - PROGRAMME SPECIFIC OUTCOMES */}
+        <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
+          <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white tracking-wide">D. Programme Specific Outcomes (PSOs) Addressed</h2>
+            <span className="text-[11px] text-white/80 hidden sm:inline">RSCOE Computer Engineering Department PSOs</span>
+          </div>
+          <div className="p-4 sm:p-5">
+            <Controller
+              control={control}
+              name="psos"
+              render={({ field: { value, onChange } }) => (
+                <div>
+                  <p className="mb-3 text-xs font-semibold text-gray-600">
+                    {(value || []).length} / {PSO_LIST.length} department PSOs selected
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {PSO_LIST.map(pso => {
+                      const isSelected = (value || []).includes(pso.id);
+                      return (
+                        <div
+                          key={pso.id}
+                          onClick={() => {
+                            const next = isSelected
+                              ? (value || []).filter(v => v !== pso.id)
+                              : [...(value || []), pso.id];
+                            onChange(next);
+                          }}
+                          className={`cursor-pointer flex flex-col justify-between p-3.5 border rounded-md transition ${
+                            isSelected
+                              ? 'border-brand-maroon bg-red-50/40 shadow-xs'
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} // State driven by parent card onClick
+                                  className="h-3.5 w-3.5 text-brand-maroon focus:ring-brand-maroon border-gray-300 rounded cursor-pointer"
+                                />
+                                <span className="text-xs font-bold text-brand-maroon bg-red-100/60 px-1.5 py-0.5 rounded">
+                                  {pso.id}
+                                </span>
+                              </div>
+                              {isSelected && (
+                                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-xs font-bold text-gray-900 leading-snug mb-1">
+                              {pso.title}
+                            </h3>
+                            <p className="text-[11px] text-gray-600 leading-relaxed">
+                              {pso.desc}
+                            </p>
+                          </div>
+                          <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                            <span className="text-gray-400 font-medium">Outcome {pso.psoNumber}</span>
+                            <span className={`font-semibold ${isSelected ? 'text-brand-maroon' : 'text-gray-500'}`}>
+                              {isSelected ? 'Included' : 'Click to select'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* SECTION E - FACULTY MENTOR DETAILS */}
+        <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
+          <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white tracking-wide">E. Faculty Mentor Details</h2>
+            <span className="text-[11px] text-white/80 hidden sm:inline">Project Guide &amp; Technical Advisor</span>
+          </div>
+          <div className="p-4 sm:p-5 space-y-3.5">
+            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-md text-xs text-amber-900 leading-relaxed">
+              <span className="font-semibold">Role Clarification:</span> The <strong>Faculty Mentor</strong> is the subject professor or teacher directly guiding your technical project implementation. This is separate from the department <strong>PBL Coordinator</strong> (assigned in the next section) who oversees academic evaluation and certification.
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Faculty Mentor Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., Dr. S. K. Patil"
+                {...register("faculty_mentor_name", {
+                  required: "Faculty Mentor Name is required",
+                  validate: v => !!v?.trim() || "Faculty Mentor Name cannot be blank or whitespace only"
+                })}
+                className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:border-brand-maroon focus:ring-1 focus:ring-brand-maroon outline-none text-gray-800"
+              />
+              {errors.faculty_mentor_name && (
+                <span className="text-red-500 text-xs mt-1 block">{errors.faculty_mentor_name.message}</span>
+              )}
+              <span className="text-[11px] text-gray-500 mt-1 block">
+                Enter the full academic name of your faculty mentor.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION F - PBL COORDINATOR MAPPING */}
         <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
           <div className="bg-brand-maroon px-5 py-2.5">
-            <h2 className="text-sm font-semibold text-white tracking-wide">D. PBL Coordinator Mapping</h2>
+            <h2 className="text-sm font-semibold text-white tracking-wide">F. PBL Coordinator Mapping</h2>
           </div>
           <div className="p-4 sm:p-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -616,10 +1363,10 @@ export default function RegisterProject() {
           </div>
         </div>
 
-        {/* SECTION E - TEAM MEMBERS */}
+        {/* SECTION G - TEAM MEMBERS */}
         <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
           <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white tracking-wide">E. Team Members</h2>
+            <h2 className="text-sm font-semibold text-white tracking-wide">G. Team Members</h2>
             <span className="text-[11px] text-white/80 hidden sm:inline">Add up to 5 members</span>
           </div>
           <div className="p-4 sm:p-5 space-y-3">
@@ -652,11 +1399,11 @@ export default function RegisterProject() {
           </div>
         </div>
 
-        {/* SECTION F - PROJECT SCREENSHOTS */}
+        {/* SECTION H - PROJECT SCREENSHOTS */}
         <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
           <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white tracking-wide flex items-center gap-2">
-              <Camera className="w-4 h-4" /> F. Project Screenshots
+              <Camera className="w-4 h-4" /> H. Project Screenshots
             </h2>
             <span className="text-[11px] text-white/80 hidden sm:inline">Upload 2–6 screenshots</span>
           </div>
@@ -719,14 +1466,47 @@ export default function RegisterProject() {
           </div>
         </div>
 
-        {/* SUBMIT BUTTON */}
-        <div className="text-center pt-2">
-          <button type="submit" disabled={loading} className="w-full max-w-md mx-auto py-2.5 px-6 bg-brand-maroon hover:bg-[#783030] text-white font-semibold text-sm rounded-md shadow-xs transition disabled:opacity-70 disabled:cursor-not-allowed">
+        {/* ACTION BUTTONS: PREVIEW & SUBMIT */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 max-w-xl mx-auto">
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-800 font-semibold text-sm rounded-md border border-gray-300 shadow-2xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Eye className="w-4 h-4 text-gray-600" />
+            Preview Report
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:flex-1 py-2.5 px-6 bg-brand-maroon hover:bg-[#6e2e2e] text-white font-semibold text-sm rounded-md shadow-2xs transition disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+          >
             {loading ? 'Submitting...' : 'Submit Project for Approval'}
           </button>
         </div>
       </form>
     </div>
+
+    {/* Form Preview Modal */}
+    {showPreview && (
+      <ProjectDocumentViewer
+        project={{
+          ...formValues,
+          isDraft: true,
+          student_id: profile?.user_id,
+          students: {
+            full_name: profile?.full_name || 'Student Name',
+            roll_number: profile?.roll_number || 'N/A',
+            department: profile?.department || 'Computer Engineering',
+            year: profile?.year || 'BE'
+          },
+          mentor_name: teachers.find(t => t.user_id === formValues.mentor_id)?.full_name || 'Assigned Coordinator',
+          screenshot_urls: screenshots.map(s => s.preview),
+          type: formValues.type === 'Complex Engineering' ? 'Complex Engineering Problems' : formValues.type
+        }}
+        onClose={() => setShowPreview(false)}
+      />
+    )}
   </DashboardLayout>
   );
 }

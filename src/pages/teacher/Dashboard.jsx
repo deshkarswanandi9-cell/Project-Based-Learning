@@ -111,7 +111,7 @@ export default function TeacherDashboard() {
 
       sheet.mergeCells('A2:C2');
       const r2 = sheet.getCell('A2');
-      r2.value = "(An Autonomous Institute Affiliated to Savitribai Phule Pune University)";
+      r2.value = "(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University, Pune)";
       r2.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FFFFFFFF' } };
       r2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8A3A3A' } };
       r2.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -134,7 +134,8 @@ export default function TeacherDashboard() {
 
       sheet.mergeCells('A5:C5');
       const r5 = sheet.getCell('A5');
-      r5.value = `Academic Year: 2026–2027  |  Generated On: ${currentDateFormatted}  |  PBL Coordinator: ${coordinatorName}`;
+      const ay = projects.find(p => p.academic_year)?.academic_year || profile?.academic_year || '2025-26';
+      r5.value = `Academic Year: ${ay}  |  Generated On: ${currentDateFormatted}  |  PBL Coordinator: ${coordinatorName}`;
       r5.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF555555' } };
       r5.alignment = { vertical: 'middle', horizontal: 'center' };
       sheet.getRow(5).height = 20;

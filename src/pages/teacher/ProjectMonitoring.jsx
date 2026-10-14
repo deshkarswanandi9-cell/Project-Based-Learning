@@ -4,10 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { getTeacherProjects, approveProject, rejectProject } from '../../utils/api';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { downloadReport } from '../../utils/downloadReport';
-import { PROJECT_DOMAINS, YEARS, SDG_GOALS, PO_LIST } from '../../utils/constants';
+import { PROJECT_DOMAINS, YEARS, SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos } from '../../utils/constants';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 import { ProjectScreenshotsGallery, ProjectCertificateLink } from '../../components/common/ProjectAttachments';
-import { Eye, Check, X, Download, XCircle, FileText } from 'lucide-react';
+import { Eye, Check, X, Download, XCircle, FileText, Award } from 'lucide-react';
 
 export default function ProjectMonitoring() {
   const { profile } = useAuth();
@@ -43,7 +43,9 @@ export default function ProjectMonitoring() {
   const filteredProjects = useMemo(() => {
     let result = projects.filter(p => {
       const sf = filters.search.toLowerCase();
-      const matchSearch = p.students?.full_name.toLowerCase().includes(sf) || p.title.toLowerCase().includes(sf);
+      const matchSearch = p.students?.full_name?.toLowerCase().includes(sf) ||
+        p.title?.toLowerCase().includes(sf) ||
+        p.faculty_mentor_name?.toLowerCase().includes(sf);
       const matchDomain = filters.domain === 'All' || p.domain === filters.domain;
       const matchStatus = filters.status === 'All' || p.status === filters.status;
       const matchYear   = filters.year === 'All' || p.students?.year === filters.year;
@@ -225,7 +227,9 @@ export default function ProjectMonitoring() {
               <div>
                 <h2 className="text-base font-semibold pr-8">{selectedProject.title}</h2>
                 <div className="flex gap-2 mt-1.5">
-                  <span className="px-2 py-0.5 bg-white/20 rounded-md text-[11px] font-medium">{selectedProject.type}</span>
+                  <span className="px-2 py-0.5 bg-white/20 rounded-md text-[11px] font-medium">
+                    {selectedProject.type === 'Complex Engineering' ? 'Complex Engineering Problems' : selectedProject.type}
+                  </span>
                   <span className="px-2 py-0.5 bg-white/20 rounded-md text-[11px] font-medium uppercase tracking-wider">{selectedProject.status}</span>
                 </div>
               </div>
@@ -239,7 +243,8 @@ export default function ProjectMonitoring() {
                 <div><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Student</span><span className="font-semibold text-gray-900 text-sm">{selectedProject.students?.full_name}</span></div>
                 <div><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Roll / Year / Dept</span><span className="font-medium text-gray-800 text-xs">{selectedProject.students?.roll_number} · {selectedProject.students?.year} · {selectedProject.students?.department}</span></div>
                 <div><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Domain</span><span className="font-medium text-gray-800 text-xs">{selectedProject.domain}</span></div>
-                <div><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Technologies</span>
+                <div><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Faculty Mentor</span><span className="font-semibold text-gray-900 text-xs">{selectedProject.faculty_mentor_name || 'Not Specified'}</span></div>
+                <div className="md:col-span-2"><span className="block text-[11px] uppercase font-medium text-gray-500 mb-0.5">Technologies</span>
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {(selectedProject.technologies||[]).map(t=><span key={t} className="px-2 py-0.5 bg-gray-50 text-gray-700 rounded-md text-[11px] font-medium border border-gray-200">{t}</span>)}
                   </div>
@@ -275,6 +280,97 @@ export default function ProjectMonitoring() {
                   })}
                 </div>
               </div>
+
+              <div className="bg-white p-4 rounded-md border border-gray-200/90 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="block text-[11px] uppercase font-medium text-gray-500">Programme Specific Outcomes (PSOs)</span>
+                  {selectedProject.psos === undefined && (
+                    <span className="text-[10px] text-amber-700 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                      Migration Pending
+                    </span>
+                  )}
+                </div>
+                {selectedProject.psos === undefined ? (
+                  <p className="text-xs text-amber-800 italic">Database column 'psos' not found. Pending execution of supabase_add_psos_column.sql</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {PSO_LIST.map(pso => {
+                      const isMapped = normalizePsos(selectedProject.psos).includes(pso.id);
+                      return (
+                        <span key={pso.id} title={`${pso.id}: ${pso.title}`} className={`px-2 py-0.5 text-[10px] font-medium rounded-md border ${isMapped ? 'bg-brand-maroon text-white border-brand-maroon' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                          {pso.id}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Hackathon & Achievement Details when applicable */}
+              {(selectedProject.type?.startsWith('Hackathon') || selectedProject.hackathon_title) && (
+                <div className="bg-amber-50/80 p-4 rounded-md border border-amber-200/90 shadow-2xs space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950 uppercase tracking-wide">
+                    <Award className="w-3.5 h-3.5 text-brand-maroon" />
+                    <span>Hackathon & Achievement Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="font-medium text-gray-500">Project Type: </span>
+                      <span className="font-semibold text-gray-900">{selectedProject.type}</span>
+                    </div>
+                    {selectedProject.hackathon_title && (
+                      <div>
+                        <span className="font-medium text-gray-500">Hackathon Title: </span>
+                        <span className="font-semibold text-gray-900">{selectedProject.hackathon_title}</span>
+                      </div>
+                    )}
+                    {selectedProject.hackathon_position && (
+                      <div>
+                        <span className="font-medium text-gray-500">Position Secured: </span>
+                        <span className="font-semibold text-gray-900">{selectedProject.hackathon_position}</span>
+                      </div>
+                    )}
+                    {selectedProject.hackathon_award_type && (
+                      <div>
+                        <span className="font-medium text-gray-500">Award / Recognition: </span>
+                        <span className="font-semibold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{selectedProject.hackathon_award_type}</span>
+                      </div>
+                    )}
+                    {selectedProject.location_mode && (
+                      <div>
+                        <span className="font-medium text-gray-500">Location Mode: </span>
+                        <span className="text-gray-800">{selectedProject.location_mode}</span>
+                      </div>
+                    )}
+                    {selectedProject.location_mode === 'Online / Virtual' ? (
+                      selectedProject.venue_details && (
+                        <div className="sm:col-span-2">
+                          <span className="font-medium text-gray-500">Online Platform / Details: </span>
+                          <span className="text-gray-800">{selectedProject.venue_details}</span>
+                        </div>
+                      )
+                    ) : (
+                      (selectedProject.venue_details || selectedProject.city || selectedProject.state || selectedProject.pincode) && (
+                        <div className="sm:col-span-2">
+                          <span className="font-medium text-gray-500">Venue Details: </span>
+                          <span className="text-gray-800">{[selectedProject.venue_details, selectedProject.city, selectedProject.state, selectedProject.pincode ? `PIN: ${selectedProject.pincode}` : null].filter(Boolean).join(', ')}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  {selectedProject.achievement_title && (
+                    <div className="pt-2 mt-1 border-t border-amber-300/80 bg-amber-100/70 p-3 rounded-md border border-amber-300">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950 mb-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Special Mention Highlight: {selectedProject.achievement_title}</span>
+                      </div>
+                      {selectedProject.achievement_description && (
+                        <p className="text-gray-800 text-xs leading-relaxed font-normal">{selectedProject.achievement_description}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {selectedProject.screenshot_urls && selectedProject.screenshot_urls.length > 0 && (
                 <div className="bg-white p-4 rounded-md border border-gray-200/90 shadow-2xs">

@@ -202,7 +202,10 @@ export default function ProjectList() {
                   
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <h4 className="font-bold text-gray-900 text-xl">{selectedProject.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{selectedProject.domain} • {selectedProject.type}</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {selectedProject.domain} • {selectedProject.type === 'Complex Engineering' ? 'Complex Engineering Problems' : selectedProject.type}
+                      {` • Faculty Mentor: ${selectedProject.faculty_mentor_name || 'Not Specified'}`}
+                    </p>
                     <p className="text-gray-700 text-sm mt-4">{selectedProject.description}</p>
                     <div className="mt-4">
                       <button

@@ -14,7 +14,7 @@ import StudentsList      from './pages/teacher/StudentsList';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isAuthenticated, role, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center text-blue-600 text-lg">Loading...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center text-brand-maroon font-semibold text-base">Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/" replace />;
   if (requiredRole && role !== requiredRole)
     return <Navigate to={role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'} replace />;

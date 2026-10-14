@@ -1,0 +1,68 @@
+[
+  {
+    "poNumber": 1,
+    "id": "PO1",
+    "title": "Engineering Knowledge",
+    "description": "Apply knowledge of mathematics, natural science, computing and engineering fundamentals to solve complex engineering problems."
+  },
+  {
+    "poNumber": 2,
+    "id": "PO2",
+    "title": "Problem Analysis",
+    "description": "Identify, formulate, review research literature and analyze complex engineering problems, reaching substantiated conclusions."
+  },
+  {
+    "poNumber": 3,
+    "id": "PO3",
+    "title": "Design/Development of Solutions",
+    "description": "Design creative solutions for complex engineering problems considering public health, safety, cost, and environment."
+  },
+  {
+    "poNumber": 4,
+    "id": "PO4",
+    "title": "Conduct Investigations of Complex Problems",
+    "description": "Conduct investigations using research-based knowledge, including design of experiments, modelling, analysis and interpretation."
+  },
+  {
+    "poNumber": 5,
+    "id": "PO5",
+    "title": "Engineering Tool Usage",
+    "description": "Create, select and apply appropriate techniques, resources and modern engineering IT tools to solve complex problems."
+  },
+  {
+    "poNumber": 6,
+    "id": "PO6",
+    "title": "The Engineer and The World",
+    "description": "Analyze and evaluate societal and environmental aspects while solving complex engineering problems for sustainability."
+  },
+  {
+    "poNumber": 7,
+    "id": "PO7",
+    "title": "Ethics",
+    "description": "Apply ethical principles, commit to professional ethics, respect human values and diversity, and adhere to applicable national and international laws."
+  },
+  {
+    "poNumber": 8,
+    "id": "PO8",
+    "title": "Individual and Collaborative Team Work",
+    "description": "Function effectively as an individual and as a member or leader in diverse, multidisciplinary teams."
+  },
+  {
+    "poNumber": 9,
+    "id": "PO9",
+    "title": "Communication",
+    "description": "Communicate effectively within the engineering community and society through reports, documentation and presentations."
+  },
+  {
+    "poNumber": 10,
+    "id": "PO10",
+    "title": "Project Management and Finance",
+    "description": "Apply engineering management principles and economic decision-making to manage projects in multidisciplinary environments."
+  },
+  {
+    "poNumber": 11,
+    "id": "PO11",
+    "title": "Life-Long Learning",
+    "description": "Recognize the need for independent and lifelong learning, adaptability to new technologies and critical thinking."
+  }
+]
