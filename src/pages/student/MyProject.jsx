@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMyProject } from '../../utils/api';
 import DashboardLayout from '../../components/common/DashboardLayout';
-import { PO_LIST, PSO_LIST, SDG_GOALS, normalizePsos } from '../../utils/constants';
+import { PO_LIST, PSO_LIST, SDG_GOALS, normalizePsos, getEffectivePsos } from '../../utils/constants';
 import { getSdgLogo } from '../../utils/sdgLogos';
 import { downloadReport } from '../../utils/downloadReport';
 import {
@@ -281,15 +281,22 @@ export default function MyProject() {
                         </div>
 
                         <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                            <BookOpen className="w-3.5 h-3.5" /> Department PSOs
-                          </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5" /> Department PSOs
+                            </p>
+                            {project.psos !== undefined && normalizePsos(project.psos).length === 0 && (
+                              <span className="text-[10px] text-purple-700 font-medium bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                AI Mapped
+                              </span>
+                            )}
+                          </div>
                           {project.psos === undefined ? (
                             <span className="text-[11px] text-amber-700 italic">Migration Pending</span>
                           ) : (
                             <div className="flex flex-wrap gap-1.5">
                               {PSO_LIST.map(pso => {
-                                const mapped = normalizePsos(project.psos).includes(pso.id);
+                                const mapped = getEffectivePsos(project).includes(pso.id);
                                 return (
                                   <span key={pso.id} title={`${pso.id}: ${pso.title}`}
                                     className={`text-xs px-2.5 py-1 rounded-md font-medium border transition ${

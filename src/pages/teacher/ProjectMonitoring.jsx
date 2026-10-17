@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getTeacherProjects, approveProject, rejectProject } from '../../utils/api';
 import DashboardLayout from '../../components/common/DashboardLayout';
 import { downloadReport } from '../../utils/downloadReport';
-import { PROJECT_DOMAINS, YEARS, SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos } from '../../utils/constants';
+import { PROJECT_DOMAINS, YEARS, SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, getEffectivePsos } from '../../utils/constants';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 import { ProjectScreenshotsGallery, ProjectCertificateLink } from '../../components/common/ProjectAttachments';
 import { Eye, Check, X, Download, XCircle, FileText, Award } from 'lucide-react';
@@ -284,18 +284,22 @@ export default function ProjectMonitoring() {
               <div className="bg-white p-4 rounded-md border border-gray-200/90 shadow-2xs">
                 <div className="flex items-center justify-between mb-2">
                   <span className="block text-[11px] uppercase font-medium text-gray-500">Programme Specific Outcomes (PSOs)</span>
-                  {selectedProject.psos === undefined && (
+                  {selectedProject.psos === undefined ? (
                     <span className="text-[10px] text-amber-700 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
                       Migration Pending
                     </span>
-                  )}
+                  ) : normalizePsos(selectedProject.psos).length === 0 ? (
+                    <span className="text-[10px] text-purple-700 font-medium bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                      AI Mapped
+                    </span>
+                  ) : null}
                 </div>
                 {selectedProject.psos === undefined ? (
                   <p className="text-xs text-amber-800 italic">Database column 'psos' not found. Pending execution of supabase_add_psos_column.sql</p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {PSO_LIST.map(pso => {
-                      const isMapped = normalizePsos(selectedProject.psos).includes(pso.id);
+                      const isMapped = getEffectivePsos(selectedProject).includes(pso.id);
                       return (
                         <span key={pso.id} title={`${pso.id}: ${pso.title}`} className={`px-2 py-0.5 text-[10px] font-medium rounded-md border ${isMapped ? 'bg-brand-maroon text-white border-brand-maroon' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
                           {pso.id}

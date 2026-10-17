@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import jspmLogo from '../assets/jspm_logo.jpeg';
 import rscoeLogo from '../assets/rscoe_logo.png';
 import { getSignedViewUrls } from './storageUtils';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails } from './constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos } from './constants';
 import { getSdgLogo } from './sdgLogos';
 
 /**
@@ -322,8 +322,8 @@ export const downloadReport = async (project, _studentProfile) => {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10.5);
     y += (warnLines.length * 5) + 3;
-  } else {
-    const selectedPsoList = normalizePsos(rawPsos);
+    const rawSelected = normalizePsos(rawPsos);
+    const selectedPsoList = rawSelected.length > 0 ? rawSelected : getEffectivePsos(project);
     if (selectedPsoList.length === 0) {
       doc.setFont(valueFont, 'italic');
       doc.setFontSize(9.5);

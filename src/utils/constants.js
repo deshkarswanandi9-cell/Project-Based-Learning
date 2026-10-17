@@ -120,6 +120,74 @@ export const resolvePsoDetails = (psoInput) => {
   };
 };
 
+/**
+ * Predicts and maps RSCOE Department Programme Specific Outcomes (PSOs)
+ * using AI heuristics based on project domain, technologies, title, description, and type.
+ */
+export const predictProjectPsos = (project) => {
+  if (!project) return ['PSO1'];
+
+  const title = (project.title || '').toLowerCase();
+  const desc = (project.description || '').toLowerCase();
+  const domain = (project.domain || '').toLowerCase();
+  const type = (project.type || '').toLowerCase();
+  const technologies = Array.isArray(project.technologies)
+    ? project.technologies.map(t => String(t).toLowerCase())
+    : (typeof project.technologies === 'string' ? project.technologies.toLowerCase().split(',') : []);
+  const combinedText = `${title} ${desc} ${domain} ${type} ${technologies.join(' ')}`;
+
+  const predicted = new Set();
+
+  // PSO1: Foundation in Computer Engineering / Software & System Design
+  predicted.add('PSO1');
+
+  // PSO2: Domain Specific Expertise / Modern Technologies
+  // (AI/ML, Data Science, Cyber Security, Cloud, IoT, Mobile App, etc.)
+  const pso2Keywords = [
+    'ai', 'artificial intelligence', 'ml', 'machine learning', 'deep learning',
+    'neural', 'data science', 'cloud', 'cyber', 'security', 'iot', 'embedded',
+    'blockchain', 'mobile', 'android', 'ios', 'flutter', 'react native',
+    'python', 'tensorflow', 'pytorch', 'vision', 'nlp', 'smart', 'automation',
+    'predict', 'detection', 'sensor', 'arduino', 'raspberry', 'web3', 'docker', 'aws'
+  ];
+  const isPso2Domain = ['ai/ml', 'data science', 'cybersecurity', 'cloud computing', 'iot', 'blockchain', 'mobile app'].includes(domain);
+  const hasPso2Keyword = pso2Keywords.some(kw => combinedText.includes(kw));
+  if (isPso2Domain || hasPso2Keyword) {
+    predicted.add('PSO2');
+  }
+
+  // PSO3: Innovation, Research, and Entrepreneurship
+  // (Hackathons, Complex Engineering Problems, novel prototypes, competitions)
+  const isHackathon = type.includes('hackathon') || Boolean(project.hackathon_title);
+  const isComplex = type.includes('complex');
+  const pso3Keywords = [
+    'hackathon', 'innovation', 'research', 'patent', 'startup', 'entrepreneur',
+    'prototype', 'competition', 'novel', 'complex', 'state-of-the-art', 'society',
+    'women safety', 'smart city', 'disaster', 'healthcare', 'emergency'
+  ];
+  const hasPso3Keyword = pso3Keywords.some(kw => combinedText.includes(kw));
+  if (isHackathon || isComplex || hasPso3Keyword) {
+    predicted.add('PSO3');
+  }
+
+  return Array.from(predicted).sort();
+};
+
+/**
+ * Returns effective PSOs for a project:
+ * - If explicit PSOs were saved and not empty, returns the saved PSOs.
+ * - If PSOs were not selected or are empty (e.g. legacy/unmigrated project),
+ *   automatically falls back to AI-predicted PSOs based on project attributes.
+ */
+export const getEffectivePsos = (project) => {
+  if (!project) return [];
+  const normalized = normalizePsos(project.psos);
+  if (normalized.length > 0) {
+    return normalized;
+  }
+  return predictProjectPsos(project);
+};
+
 
 export const PROJECT_DOMAINS = [
   'AI/ML','Web Development','DevOps','IoT',

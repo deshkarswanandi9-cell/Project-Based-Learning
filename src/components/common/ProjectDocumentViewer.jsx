@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Award, MapPin } from 'lucide-react';
 import jspmLogo from '../../assets/jspm_logo.jpeg';
 import rscoeLogo from '../../assets/rscoe_logo.png';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails } from '../../utils/constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos } from '../../utils/constants';
 import { getSdgLogo } from '../../utils/sdgLogos';
 import { useSignedUrls } from '../../utils/storageUtils';
 
@@ -32,6 +32,8 @@ export default function ProjectDocumentViewer({ project, onClose }) {
   const isDraft = Boolean(project.isDraft);
   const psos = normalizePsos(project.psos);
   const isPsoColumnMissing = !isDraft && project.psos === undefined;
+  const effectivePsos = (psos.length > 0 || isPsoColumnMissing) ? psos : getEffectivePsos(project);
+  const isAiMapped = !isDraft && !isPsoColumnMissing && psos.length === 0 && effectivePsos.length > 0;
   const isHackathon = project.type?.startsWith('Hackathon') || !!project.hackathon_title;
   const projectType = project.type === 'Complex Engineering'
     ? 'Complex Engineering Problems'
@@ -324,18 +326,23 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                       Form Preview (Unsaved)
                     </span>
                   )}
+                  {isAiMapped && (
+                    <span style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '11px', fontWeight: '500', color: '#6B21A8', backgroundColor: '#F3E8FF', padding: '1px 6px', borderRadius: '4px' }}>
+                      AI Mapped
+                    </span>
+                  )}
                 </div>
                 {isPsoColumnMissing ? (
                   <div style={{ color: '#B45309', fontSize: '12px', fontStyle: 'italic', backgroundColor: '#FEF3C7', padding: '8px 12px', borderRadius: '4px', border: '1px solid #FCD34D' }}>
                     Notice: PSO mapping is pending database column migration (supabase_add_psos_column.sql).
                   </div>
-                ) : psos.length === 0 ? (
+                ) : effectivePsos.length === 0 ? (
                   <div style={{ color: '#6B7280', fontSize: '12.5px', fontStyle: 'italic', paddingLeft: '4px' }}>
                     No Programme Specific Outcomes selected.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '4px' }}>
-                    {psos.map(psoEntry => {
+                    {effectivePsos.map(psoEntry => {
                       const details = resolvePsoDetails(psoEntry);
                       if (!details) return null;
                       return (
