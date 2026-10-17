@@ -94,8 +94,8 @@ export const downloadReport = async (project, _studentProfile) => {
 
   // 1. ADD INSTITUTION LOGOS
   await Promise.all([
-    addImageAsync(jspmLogo, 15, 10, 25, 18),
-    addImageAsync(rscoeLogo, pageWidth - 40, 10, 25, 18)
+    addImageAsync(jspmLogo, 14, 9, 27, 21),
+    addImageAsync(rscoeLogo, pageWidth - 41, 9, 27, 21)
   ]);
 
   // 2. EXACT INSTITUTION HEADER
@@ -435,6 +435,44 @@ export const downloadReport = async (project, _studentProfile) => {
       }
     }
   }
+
+  // H. DEDICATED SIGNATURE SECTION
+  const sigBlockHeight = 38;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const bottomMargin = 20;
+
+  // Keep both signature blocks together at the end; add new page if needed
+  if (y + sigBlockHeight > pageHeight - bottomMargin) {
+    doc.addPage();
+    y = 30;
+  } else {
+    y += 12;
+  }
+
+  const sigColWidth = 65;
+  const leftSigX = margin;
+  const rightSigX = pageWidth - margin - sigColWidth;
+  const sigLineY = y + 18;
+
+  // Signature divider lines
+  doc.setDrawColor(60, 60, 60);
+  doc.setLineWidth(0.35);
+  doc.line(leftSigX, sigLineY, leftSigX + sigColWidth, sigLineY);
+  doc.line(rightSigX, sigLineY, rightSigX + sigColWidth, sigLineY);
+
+  // Role labels
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(20, 20, 20);
+  doc.text("PBL Coordinator Signature", leftSigX, sigLineY + 5);
+  doc.text("Team Leader Signature", rightSigX, sigLineY + 5);
+
+  // Printable line labels
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text("Signature: __________________________", leftSigX, sigLineY + 10);
+  doc.text("Signature: __________________________", rightSigX, sigLineY + 10);
 
   // SAVE FILE
   const safeTitle = (project.title || 'Project_Report').substring(0, 25).replace(/[^a-zA-Z0-9_-]/g, '_');

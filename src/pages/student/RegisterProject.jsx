@@ -11,8 +11,11 @@ import { Check, XCircle, AlertCircle, Camera, X as XIcon, Award, Paperclip, File
 import AIRecommendationsSection from '../../components/student/AIRecommendationsSection';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 
+export const MAX_SCREENSHOTS = 4;
+export const MAX_CERTIFICATES = 3;
+
 export default function RegisterProject() {
-  const { profile } = useAuth();
+  const { profile, user, role } = useAuth();
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -169,34 +172,37 @@ export default function RegisterProject() {
     toast.success('Recommended PSOs added to project.');
   };
 
-  // Screenshot state
+  // Screenshot state (maximum 4 attachments)
   const [screenshots, setScreenshots] = useState([]);  // Array of { file, preview }
   const [screenshotError, setScreenshotError] = useState('');
 
-  // Hackathon certificate / proof state
-  const [certificateFile, setCertificateFile] = useState(null); // { file, preview, name, size, isPdf }
+  // Hackathon certificate / proof state (maximum 3 attachments)
+  const [certificates, setCertificates] = useState([]); // Array of { file, preview, name, size, isPdf }
   const [certificateError, setCertificateError] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
     getTeachers()
       .then(data => {
+        if (!isMounted) return;
         if (data && data.length > 0) {
           setTeachers(data);
         } else {
           setTeachers([
-            { id: 1, user_id: 't1', full_name: 'Dr. S. K. Patil', department: 'Computer Engineering' },
-            { id: 2, user_id: 't2', full_name: 'Prof. A. R. Kulkarni', department: 'Computer Engineering' },
-            { id: 3, user_id: 't3', full_name: 'Dr. M. N. Rao', department: 'Information Technology' },
+            { id: 16, user_id: '64b7d326-2b3d-47b7-891e-f602aa3a5d7c', full_name: 'Dr. S. K. Patil (shiva)', department: 'Computer Engineering' },
+            { id: 18, user_id: 'ca28f78d-66dc-4ed2-8ee6-5233f00fd4e9', full_name: 'prof. Vaishnavi Chitragar', department: 'Computer Engineering' }
           ]);
         }
       })
       .catch(() => {
+        if (!isMounted) return;
         setTeachers([
-          { id: 1, user_id: 't1', full_name: 'Dr. S. K. Patil', department: 'Computer Engineering' },
-          { id: 2, user_id: 't2', full_name: 'Prof. A. R. Kulkarni', department: 'Computer Engineering' },
+          { id: 16, user_id: '64b7d326-2b3d-47b7-891e-f602aa3a5d7c', full_name: 'Dr. S. K. Patil (shiva)', department: 'Computer Engineering' },
+          { id: 18, user_id: 'ca28f78d-66dc-4ed2-8ee6-5233f00fd4e9', full_name: 'prof. Vaishnavi Chitragar', department: 'Computer Engineering' }
         ]);
       });
-  }, []);
+    return () => { isMounted = false; };
+  }, [user]);
 
   const handleAddTech = (e) => {
     if (e.key === 'Enter') {
@@ -214,10 +220,11 @@ export default function RegisterProject() {
   };
 
   const handleScreenshotChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     const valid = files.filter(f => f.type.startsWith('image/'));
-    if (valid.length + screenshots.length > 6) {
-      setScreenshotError('You can upload a maximum of 6 screenshots.');
+    if (valid.length + screenshots.length > MAX_SCREENSHOTS) {
+      setScreenshotError(`You can upload a maximum of ${MAX_SCREENSHOTS} screenshots.`);
       return;
     }
     setScreenshotError('');
@@ -232,47 +239,63 @@ export default function RegisterProject() {
       URL.revokeObjectURL(prev[idx].preview);
       return prev.filter((_, i) => i !== idx);
     });
+    setScreenshotError('');
   };
 
   const handleCertificateChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    if (selectedFiles.length + certificates.length > MAX_CERTIFICATES) {
+      setCertificateError(`You can upload a maximum of ${MAX_CERTIFICATES} certificate documents.`);
+      return;
+    }
 
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    const invalidType = selectedFiles.find(f => !allowedTypes.includes(f.type));
+    if (invalidType) {
       setCertificateError('Please upload a PDF or an image (PNG, JPG, WebP).');
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setCertificateError('File size exceeds the 10MB limit.');
+    const oversized = selectedFiles.find(f => f.size > 10 * 1024 * 1024);
+    if (oversized) {
+      setCertificateError(`File "${oversized.name}" exceeds the 10MB limit.`);
       return;
     }
 
     setCertificateError('');
-    const isPdf = file.type === 'application/pdf';
-    setCertificateFile({
-      file,
-      preview: isPdf ? null : URL.createObjectURL(file),
-      name: file.name,
-      size: file.size < 1024 * 1024 
-        ? `${(file.size / 1024).toFixed(1)} KB` 
-        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      isPdf
+    const newCerts = selectedFiles.map(file => {
+      const isPdf = file.type === 'application/pdf';
+      return {
+        file,
+        preview: isPdf ? null : URL.createObjectURL(file),
+        name: file.name,
+        size: file.size < 1024 * 1024 
+          ? `${(file.size / 1024).toFixed(1)} KB` 
+          : `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        isPdf
+      };
     });
+
+    setCertificates(prev => [...prev, ...newCerts]);
     e.target.value = '';
   };
 
-  const removeCertificate = () => {
-    if (certificateFile?.preview) {
-      URL.revokeObjectURL(certificateFile.preview);
-    }
-    setCertificateFile(null);
-    if (watch('type') === 'Hackathon') {
-      setCertificateError('Please attach a proof / certificate for the Hackathon.');
-    } else {
-      setCertificateError('');
-    }
+  const removeCertificate = (indexToRemove) => {
+    setCertificates(prev => {
+      const toRemove = prev[indexToRemove];
+      if (toRemove?.preview) {
+        URL.revokeObjectURL(toRemove.preview);
+      }
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      if (watch('type') === 'Hackathon' && updated.length === 0) {
+        setCertificateError('Please attach a proof / certificate for the Hackathon.');
+      } else {
+        setCertificateError('');
+      }
+      return updated;
+    });
   };
 
   useEffect(() => {
@@ -288,15 +311,24 @@ export default function RegisterProject() {
       setValue('state', '');
       setValue('pincode', '');
       setValue('venue_details', '');
-      setCertificateFile(null);
+      setCertificates(prev => {
+        prev.forEach(c => {
+          if (c.preview) URL.revokeObjectURL(c.preview);
+        });
+        return [];
+      });
     }
   }, [selectedType, certificateError, setValue]);
 
   const onSubmit = async (data) => {
     // Validate Hackathon fields
     if (data.type === 'Hackathon') {
-      if (!certificateFile) {
+      if (certificates.length === 0) {
         setCertificateError('Please attach a proof / certificate for the Hackathon.');
+        return;
+      }
+      if (certificates.length > MAX_CERTIFICATES) {
+        setCertificateError(`You can upload a maximum of ${MAX_CERTIFICATES} certificate documents.`);
         return;
       }
       if (!data.hackathon_title || !data.hackathon_title.trim()) {
@@ -361,15 +393,38 @@ export default function RegisterProject() {
       setScreenshotError('Please upload at least two project screenshots.');
       return;
     }
+    if (screenshots.length > MAX_SCREENSHOTS) {
+      setScreenshotError(`You can upload a maximum of ${MAX_SCREENSHOTS} screenshots.`);
+      return;
+    }
     setScreenshotError('');
+
+    // Guard against faculty submission (which violates foreign key and RLS constraints on projects table)
+    if (role === 'teacher' || role === 'unapproved_teacher') {
+      toast.error(
+        `Cannot submit: You are currently logged in as faculty (${profile?.full_name || user?.email || 'Teacher'}). Projects must be registered and submitted from a student account.`,
+        { duration: 8000 }
+      );
+      return;
+    }
+
+    const studentUserId = user?.id || profile?.user_id;
+    if (!studentUserId) {
+      toast.error('Session expired or student profile not loaded. Please log in again to submit.');
+      return;
+    }
+
+    const studentIdPrefix = profile?.id || user?.id || 'student';
+
     setLoading(true);
     try {
-      // Upload all screenshot images to Supabase storage
+      // Upload project screenshot images to Supabase storage (maximum 4)
       toast.loading('Uploading screenshots...', { id: 'upload' });
       const uploadedUrls = [];
-      for (const entry of screenshots) {
+      const validScreenshots = screenshots.slice(0, MAX_SCREENSHOTS);
+      for (const entry of validScreenshots) {
         const fileExt = entry.file.name.split('.').pop();
-        const fileName = `${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const fileName = `${studentIdPrefix}-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('projects')
           .upload(fileName, entry.file, { contentType: entry.file.type });
@@ -378,37 +433,33 @@ export default function RegisterProject() {
         uploadedUrls.push(uploadData.path || fileName);
       }
 
-      // Upload Hackathon Certificate if attached
+      // Upload Hackathon Certificates if attached (maximum 3)
       let uploadedCertificateUrl = null;
-      if (data.type === 'Hackathon' && certificateFile?.file) {
+      if (data.type === 'Hackathon' && certificates.length > 0) {
         toast.loading('Uploading certificate proof...', { id: 'upload' });
-        const certExt = certificateFile.file.name.split('.').pop();
-        const certFileName = `cert-${profile.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.${certExt}`;
-        const { data: certUploadData, error: certUploadError } = await supabase.storage
-          .from('projects')
-          .upload(certFileName, certificateFile.file, { contentType: certificateFile.file.type });
-        if (certUploadError) throw certUploadError;
-        // Store bucket-relative path for certificate
-        uploadedCertificateUrl = certUploadData.path || certFileName;
+        const validCerts = certificates.slice(0, MAX_CERTIFICATES);
+        const uploadedCertUrls = [];
+        for (const cert of validCerts) {
+          const certExt = cert.file.name.split('.').pop();
+          const certFileName = `cert-${studentIdPrefix}-${Date.now()}-${Math.random().toString(36).slice(2)}.${certExt}`;
+          const { data: certUploadData, error: certUploadError } = await supabase.storage
+            .from('projects')
+            .upload(certFileName, cert.file, { contentType: cert.file.type });
+          if (certUploadError) throw certUploadError;
+          uploadedCertUrls.push(certUploadData.path || certFileName);
+        }
+        // Store single path or JSON array of paths
+        uploadedCertificateUrl = uploadedCertUrls.length === 1
+          ? uploadedCertUrls[0]
+          : JSON.stringify(uploadedCertUrls);
       }
 
       toast.loading('Submitting project...', { id: 'upload' });
-      const mentor = teachers.find(t => t.id === parseInt(data.mentor_id)) || { user_id: 'mentor_default', full_name: 'PBL Coordinator' };
+      const mentor = teachers.find(t => String(t.id) === String(data.mentor_id) || t.user_id === data.mentor_id) || teachers[0] || null;
 
       // Sanitize hackathon payload: Ensure hidden conditional values never leak
       let finalType = data.type;
-      let hackathonData = {
-        hackathon_title: null,
-        hackathon_position: null,
-        hackathon_award_type: null,
-        achievement_title: null,
-        achievement_description: null,
-        location_mode: null,
-        city: null,
-        state: null,
-        pincode: null,
-        venue_details: null
-      };
+      const hackathonData = {};
 
       if (data.type === 'Hackathon') {
         const pos = data.hackathon_position;
@@ -421,18 +472,16 @@ export default function RegisterProject() {
           : pos;
         finalType = posText ? `Hackathon (${posText})` : 'Hackathon';
 
-        hackathonData = {
-          hackathon_title: data.hackathon_title?.trim() || null,
-          hackathon_position: pos,
-          hackathon_award_type: award || null,
-          achievement_title: isSpecialMention ? (data.achievement_title?.trim() || null) : null,
-          achievement_description: isSpecialMention ? (data.achievement_description?.trim() || null) : null,
-          location_mode: data.location_mode || 'In-Person / Physical Venue',
-          city: isOnline ? null : (data.city?.trim() || null),
-          state: isOnline ? null : (data.state?.trim() || null),
-          pincode: isOnline ? null : (data.pincode?.trim() || null),
-          venue_details: data.venue_details?.trim() || null
-        };
+        if (data.hackathon_title?.trim()) hackathonData.hackathon_title = data.hackathon_title.trim();
+        if (pos) hackathonData.hackathon_position = pos;
+        if (award) hackathonData.hackathon_award_type = award;
+        if (isSpecialMention && data.achievement_title?.trim()) hackathonData.achievement_title = data.achievement_title.trim();
+        if (isSpecialMention && data.achievement_description?.trim()) hackathonData.achievement_description = data.achievement_description.trim();
+        if (data.location_mode) hackathonData.location_mode = data.location_mode;
+        if (!isOnline && data.city?.trim()) hackathonData.city = data.city.trim();
+        if (!isOnline && data.state?.trim()) hackathonData.state = data.state.trim();
+        if (!isOnline && data.pincode?.trim()) hackathonData.pincode = data.pincode.trim();
+        if (data.venue_details?.trim()) hackathonData.venue_details = data.venue_details.trim();
       }
 
       // Validate PSOs strictly against official RSCOE definitions
@@ -442,25 +491,34 @@ export default function RegisterProject() {
         title: data.title?.trim(),
         type: finalType,
         domain: data.domain,
-        faculty_mentor_name: data.faculty_mentor_name?.trim() || null,
         description: data.description,
         technologies: data.technologies,
-        sdg_goals: data.sdg_goals.map(Number),
+        sdg_goals: (data.sdg_goals || []).map(Number),
         pos: data.pos,
-        psos: validPsos,
-        mentor_id: mentor.user_id,
-        mentor_name: mentor.full_name,
-        student_id: profile.user_id,
+        mentor_id: mentor?.user_id || null,
+        mentor_name: mentor?.full_name || 'Department Faculty',
+        student_id: studentUserId,
         semester: data.semester,
         academic_year: data.academic_year,
-        github_link: data.github_link || null,
-        linkedin_link: data.linkedin_link || null,
         screenshot_urls: uploadedUrls,
         document_url: uploadedCertificateUrl,
         team_members: data.team_members,
         status: 'Pending',
         ...hackathonData
       };
+
+      if (data.faculty_mentor_name?.trim()) {
+        projectPayload.faculty_mentor_name = data.faculty_mentor_name.trim();
+      }
+      if (validPsos && validPsos.length > 0) {
+        projectPayload.psos = validPsos;
+      }
+      if (data.github_link?.trim()) {
+        projectPayload.github_link = data.github_link.trim();
+      }
+      if (data.linkedin_link?.trim()) {
+        projectPayload.linkedin_link = data.linkedin_link.trim();
+      }
 
       let missingColumnsEncountered = [];
       const potentialNewCols = [
@@ -487,34 +545,53 @@ export default function RegisterProject() {
           registered = true;
         } catch (dbErr) {
           const errMsg = (dbErr?.message || '').toLowerCase();
-          const matchedCols = potentialNewCols.filter(col => errMsg.includes(col));
-          const colsToRemove = matchedCols.length > 0 ? matchedCols : (
-            (errMsg.includes('column') || errMsg.includes('does not exist') || errMsg.includes('schema cache')) ? potentialNewCols : []
-          );
+          const isSchemaOrColErr = errMsg.includes('column') ||
+            errMsg.includes('does not exist') ||
+            errMsg.includes('schema cache') ||
+            errMsg.includes('pgrst204') ||
+            errMsg.includes('42703');
 
-          if (colsToRemove.length === 0) {
+          if (!isSchemaOrColErr) {
             throw dbErr;
           }
 
           console.warn(`[RegisterProject] Attempt ${attempt + 1}: Database projects table lacks pending migration columns. Retrying without unmigrated fields.`, dbErr.message);
 
+          // If error mentions specific columns on attempt 0, target them; otherwise strip all new migration columns immediately
+          const matchedCols = potentialNewCols.filter(col => errMsg.includes(col));
+          const colsToRemove = matchedCols.length > 0 && attempt === 0
+            ? matchedCols
+            : potentialNewCols;
+
           let removedAny = false;
           colsToRemove.forEach(col => {
-            if (currentPayload[col] !== undefined && currentPayload[col] !== null) {
-              if (Array.isArray(currentPayload[col]) && currentPayload[col].length > 0) {
-                if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
-              } else if (typeof currentPayload[col] === 'string' && currentPayload[col].trim()) {
-                if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+            if (col in currentPayload) {
+              const val = currentPayload[col];
+              if (val !== undefined && val !== null) {
+                if (Array.isArray(val) && val.length > 0) {
+                  if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+                } else if (typeof val === 'string' && val.trim()) {
+                  if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+                } else if (typeof val !== 'string') {
+                  if (!missingColumnsEncountered.includes(col)) missingColumnsEncountered.push(col);
+                }
               }
               delete currentPayload[col];
               removedAny = true;
-            } else if (col in currentPayload) {
-              delete currentPayload[col];
             }
           });
 
           if (!removedAny) {
-            throw dbErr;
+            // Strip any remaining unmigrated columns as safety fallback
+            potentialNewCols.forEach(col => {
+              if (col in currentPayload) {
+                delete currentPayload[col];
+                removedAny = true;
+              }
+            });
+            if (!removedAny) {
+              throw dbErr;
+            }
           }
         }
       }
@@ -550,6 +627,22 @@ export default function RegisterProject() {
   return (
     <DashboardLayout>
       <div className="w-full mx-auto py-3 sm:py-4">
+        {/* Faculty Mode Notice */}
+        {(role === 'teacher' || role === 'unapproved_teacher') && (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-2xs mb-5 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-900 leading-relaxed">
+              <p className="font-bold text-amber-950 text-sm">Faculty Account Active ({profile?.full_name || user?.email})</p>
+              <p className="mt-1">
+                You are currently logged in with a faculty / coordinator account. In the RSCOE PBL Portal, project proposals are submitted by <strong>students</strong> so that coordinators can review, monitor, and approve them.
+              </p>
+              <p className="mt-1 font-semibold text-amber-950">
+                To test submitting a project proposal for approval, please sign in with a student account.
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 pb-8">
           {/* Global Error Summary */}
           {(Object.keys(errors).length > 0 || screenshotError || (selectedType === 'Hackathon' && certificateError)) && (
@@ -947,20 +1040,27 @@ export default function RegisterProject() {
                       )}
                     </div>
 
-                    {/* 6. Hackathon Certificate / Proof Attachment */}
+                    {/* 6. Hackathon Certificate / Proof Attachment (Max 3) */}
                     <div className="pt-3 border-t border-amber-200">
                       <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <Award className="w-3.5 h-3.5 text-amber-700" />
-                          Attach Proof / Certificate <span className="text-red-500">*</span>
+                          Attach Proof / Certificate (Max 3) <span className="text-red-500">*</span>
                         </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200">Required</span>
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                          certificates.length === 0
+                            ? 'text-red-700 bg-red-100/80 border-red-200'
+                            : 'text-emerald-700 bg-emerald-100/80 border-emerald-200'
+                        }`}>
+                          {certificates.length === 0 ? 'Required' : `${certificates.length} of 3 Attached`}
+                        </span>
                       </label>
                       <p className="text-[11px] text-amber-900/70 mb-2.5">
-                        Upload certificate of participation, achievement, or prize (PDF, PNG, JPG up to 10MB).
+                        Upload up to 3 certificates of participation, achievement, or prize documents (PDF, PNG, JPG up to 10MB each).
                       </p>
 
-                      {!certificateFile ? (
+                      {/* Add button or limit reached message */}
+                      {certificates.length < MAX_CERTIFICATES ? (
                         <div>
                           <label
                             htmlFor="hackathon-certificate-upload"
@@ -971,47 +1071,69 @@ export default function RegisterProject() {
                             }`}
                           >
                             <Paperclip className={`w-4 h-4 transition ${certificateError ? 'text-red-600' : 'text-amber-600 group-hover:scale-110'}`} />
-                            <span>Click to attach certificate or proof document</span>
+                            <span>
+                              {certificates.length === 0
+                                ? 'Click to attach certificate or proof document (Max 3)'
+                                : `Attach Another Certificate or Proof Document (${certificates.length}/${MAX_CERTIFICATES})`}
+                            </span>
                           </label>
                           <input
                             id="hackathon-certificate-upload"
                             type="file"
                             accept="application/pdf,image/jpeg,image/png,image/webp"
+                            multiple
                             className="hidden"
                             onChange={handleCertificateChange}
                           />
                         </div>
                       ) : (
-                        <div className="bg-white border border-amber-300 rounded-lg p-2.5 flex items-center justify-between shadow-2xs">
-                          <div className="flex items-center gap-2.5 overflow-hidden">
-                            {certificateFile.isPdf ? (
-                              <div className="w-9 h-9 rounded-md bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold text-[10px] tracking-wider border border-red-200">
-                                PDF
+                        <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-lg text-xs font-medium text-amber-900 flex items-center gap-2 shadow-2xs">
+                          <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0" />
+                          <span>Maximum limit of 3 certificate documents reached. Remove an attachment to add another.</span>
+                        </div>
+                      )}
+
+                      {/* Uploaded Certificate Items */}
+                      {certificates.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {certificates.map((cert, index) => (
+                            <div key={index} className="bg-white border border-amber-300 rounded-lg p-2.5 flex items-center justify-between shadow-2xs">
+                              <div className="flex items-center gap-2.5 overflow-hidden">
+                                {cert.isPdf ? (
+                                  <div className="w-9 h-9 rounded-md bg-red-100 flex items-center justify-center shrink-0 text-red-600 font-bold text-[10px] tracking-wider border border-red-200">
+                                    PDF
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={cert.preview}
+                                    alt={`Certificate ${index + 1}`}
+                                    className="w-9 h-9 object-cover rounded-md border border-gray-200 shrink-0"
+                                  />
+                                )}
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded">
+                                      File {index + 1}
+                                    </span>
+                                    <p className="text-xs font-semibold text-gray-800 truncate" title={cert.name}>
+                                      {cert.name}
+                                    </p>
+                                  </div>
+                                  <p className="text-[10px] text-gray-500 mt-0.5">
+                                    {cert.size} • {cert.isPdf ? 'PDF Document' : 'Image Certificate'}
+                                  </p>
+                                </div>
                               </div>
-                            ) : (
-                              <img
-                                src={certificateFile.preview}
-                                alt="Certificate Preview"
-                                className="w-9 h-9 object-cover rounded-md border border-gray-200 shrink-0"
-                              />
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-xs font-semibold text-gray-800 truncate" title={certificateFile.name}>
-                                {certificateFile.name}
-                              </p>
-                              <p className="text-[10px] text-gray-500">
-                                {certificateFile.size} • {certificateFile.isPdf ? 'PDF Document' : 'Image Certificate'}
-                              </p>
+                              <button
+                                type="button"
+                                onClick={() => removeCertificate(index)}
+                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition shrink-0 ml-2 cursor-pointer"
+                                title={`Remove certificate ${index + 1}`}
+                              >
+                                <XIcon className="w-4 h-4" />
+                              </button>
                             </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={removeCertificate}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition shrink-0 ml-2"
-                            title="Remove attached certificate"
-                          >
-                            <XIcon className="w-4 h-4" />
-                          </button>
+                          ))}
                         </div>
                       )}
 
@@ -1405,29 +1527,38 @@ export default function RegisterProject() {
             <h2 className="text-sm font-semibold text-white tracking-wide flex items-center gap-2">
               <Camera className="w-4 h-4" /> H. Project Screenshots
             </h2>
-            <span className="text-[11px] text-white/80 hidden sm:inline">Upload 2–6 screenshots</span>
+            <span className="text-[11px] text-white/80 hidden sm:inline">Upload 2–4 screenshots</span>
           </div>
           <div className="p-4 sm:p-5">
-            {/* Upload Button */}
-            <label
-              htmlFor="screenshot-upload"
-              className="flex items-center gap-1.5 w-fit cursor-pointer px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 rounded-md text-gray-700 font-medium text-xs transition"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              {screenshots.length === 0 ? 'Choose Screenshots' : 'Add More'}
-            </label>
-            <input
-              id="screenshot-upload"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="hidden"
-              onChange={handleScreenshotChange}
-            />
+            {/* Upload Button or Max Limit Notice */}
+            {screenshots.length < MAX_SCREENSHOTS ? (
+              <>
+                <label
+                  htmlFor="screenshot-upload"
+                  className="flex items-center gap-1.5 w-fit cursor-pointer px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 rounded-md text-gray-700 font-medium text-xs transition"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  {screenshots.length === 0 ? `Choose Screenshots (Max ${MAX_SCREENSHOTS})` : `Add More (${screenshots.length}/${MAX_SCREENSHOTS})`}
+                </label>
+                <input
+                  id="screenshot-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={handleScreenshotChange}
+                />
+              </>
+            ) : (
+              <div className="px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-gray-700 text-xs font-medium flex items-center gap-2 w-fit">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Maximum limit of 4 project screenshots reached. Remove a screenshot to add another.</span>
+              </div>
+            )}
 
             {/* Preview Grid */}
             {screenshots.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {screenshots.map((entry, idx) => (
                   <div key={idx} className="relative group rounded-md overflow-hidden border border-gray-200 shadow-2xs">
                     <img
@@ -1439,7 +1570,7 @@ export default function RegisterProject() {
                       <button
                         type="button"
                         onClick={() => removeScreenshot(idx)}
-                        className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 transition shadow"
+                        className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 transition shadow cursor-pointer"
                         title="Remove screenshot"
                       >
                         <XIcon className="w-3.5 h-3.5" />
@@ -1460,7 +1591,7 @@ export default function RegisterProject() {
             )}
             {screenshots.length < 2 && !screenshotError && (
               <p className="mt-2 text-[11px] text-gray-500 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 text-gray-400 shrink-0" /> At least 2 screenshots are required (JPEG, PNG, WebP up to 10MB).
+                <AlertCircle className="w-3 h-3 text-gray-400 shrink-0" /> At least 2 screenshots are required (maximum 4 allowed, JPEG, PNG, WebP up to 10MB each).
               </p>
             )}
           </div>
@@ -1478,10 +1609,10 @@ export default function RegisterProject() {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || role === 'teacher' || role === 'unapproved_teacher'}
             className="w-full sm:flex-1 py-2.5 px-6 bg-brand-maroon hover:bg-[#6e2e2e] text-white font-semibold text-sm rounded-md shadow-2xs transition disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
           >
-            {loading ? 'Submitting...' : 'Submit Project for Approval'}
+            {loading ? 'Submitting...' : (role === 'teacher' || role === 'unapproved_teacher') ? 'Student Account Required to Submit' : 'Submit Project for Approval'}
           </button>
         </div>
       </form>
@@ -1502,6 +1633,9 @@ export default function RegisterProject() {
           },
           mentor_name: teachers.find(t => t.user_id === formValues.mentor_id)?.full_name || 'Assigned Coordinator',
           screenshot_urls: screenshots.map(s => s.preview),
+          document_url: certificates.length > 0 
+            ? (certificates.length === 1 ? certificates[0].preview : JSON.stringify(certificates.map(c => c.preview || c.name)))
+            : null,
           type: formValues.type === 'Complex Engineering' ? 'Complex Engineering Problems' : formValues.type
         }}
         onClose={() => setShowPreview(false)}

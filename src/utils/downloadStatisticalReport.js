@@ -78,14 +78,14 @@ export const downloadStatisticalReportPDF = async ({
     : 'Department of Computer Engineering';
 
   // 1. ADD LOGOS (Header)
-  const logoH = 18;
+  const logoH = 22;
   if (jspmImg?.dataUrl) {
     const w = logoH * (jspmImg.width / jspmImg.height);
-    doc.addImage(jspmImg.dataUrl, 'PNG', margin, 10, w, logoH);
+    doc.addImage(jspmImg.dataUrl, 'PNG', margin, 9, w, logoH);
   }
   if (rscoeImg?.dataUrl) {
     const w = logoH * (rscoeImg.width / rscoeImg.height);
-    doc.addImage(rscoeImg.dataUrl, 'PNG', pageWidth - margin - w, 10, w, logoH);
+    doc.addImage(rscoeImg.dataUrl, 'PNG', pageWidth - margin - w, 9, w, logoH);
   }
 
   // 2. COLLEGE HEADER TEXT (Official Letterhead)

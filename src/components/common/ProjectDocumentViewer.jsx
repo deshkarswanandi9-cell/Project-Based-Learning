@@ -126,9 +126,9 @@ export default function ProjectDocumentViewer({ project, onClose }) {
 
             {/* ── EXACT INSTITUTION HEADER ── */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '16px', marginBottom: '25px' }}>
-              <img src={jspmLogo} alt="JSPM Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
+              <img src={jspmLogo} alt="JSPM Logo" style={{ height: '84px', width: 'auto', maxWidth: '100px', objectFit: 'contain' }} />
               <div style={{ flex: 1, textAlign: 'center', padding: '0 20px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '16px', letterSpacing: '0.02em' }}>JSPM’s</div>
+                <div style={{ fontWeight: 'bold', fontSize: '16px', letterSpacing: '0.02em' }}>JSPM's</div>
                 <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '4px' }}>
                   Rajarshi Shahu College of Engineering, Tathawade Pune-33
                 </div>
@@ -142,7 +142,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                   Academic Year: {project.academic_year || 'Not Specified'}
                 </div>
               </div>
-              <img src={rscoeLogo} alt="RSCOE Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
+              <img src={rscoeLogo} alt="RSCOE Logo" style={{ height: '84px', width: 'auto', maxWidth: '100px', objectFit: 'contain' }} />
             </div>
 
             {/* ── TITLE ── */}
@@ -419,6 +419,35 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                     No screenshots attached
                   </div>
                 )}
+              </div>
+
+              {/* Section H: Signatures */}
+              <div style={{ marginTop: '36px', paddingTop: '20px', borderTop: '1px solid #E5E7EB', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '32px' }}>
+                  {/* Left: PBL Coordinator Signature */}
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ height: '48px' }}></div>
+                    <div style={{ borderBottom: '1px solid #111827', marginBottom: '8px', width: '220px' }}></div>
+                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827' }}>
+                      PBL Coordinator Signature
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#4B5563', marginTop: '2px' }}>
+                      Signature: __________________________
+                    </div>
+                  </div>
+
+                  {/* Right: Team Leader Signature */}
+                  <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <div style={{ height: '48px' }}></div>
+                    <div style={{ borderBottom: '1px solid #111827', marginBottom: '8px', width: '220px' }}></div>
+                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827' }}>
+                      Team Leader Signature
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#4B5563', marginTop: '2px' }}>
+                      Signature: __________________________
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </div>

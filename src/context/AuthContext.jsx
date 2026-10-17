@@ -23,6 +23,9 @@ export const AuthProvider = ({ children }) => {
       } else {
         setRole('unapproved_teacher');
       }
+    } else {
+      setProfile(null);
+      setRole(null);
     }
     setLoading(false);
   };
@@ -81,8 +84,13 @@ export const AuthProvider = ({ children }) => {
 
     const { data: s } = await supabase.from('students')
       .select('*').eq('user_id', data.user.id).maybeSingle();
-    if (!s) { await supabase.auth.signOut();
-      throw new Error('No student account found with this email'); }
+    if (!s) {
+      await supabase.auth.signOut();
+      setUser(null); setProfile(null); setRole(null);
+      throw new Error('No student account found with this email');
+    }
+    setProfile(s);
+    setRole('student');
     return data;
   };
 
@@ -111,13 +119,16 @@ export const AuthProvider = ({ children }) => {
       .select('*').eq('user_id', data.user.id).maybeSingle();
     if (!t) {
       await supabase.auth.signOut();
+      setUser(null); setProfile(null); setRole(null);
       throw new Error('No teacher account found with this email');
     }
-    if (!t.is_approved) {
-      await supabase.auth.signOut();
-      throw new Error('Your faculty account has been registered but is pending administrator approval. Please contact your Department PBL Coordinator.');
+    setProfile(t);
+    if (t.is_approved) {
+      setRole('teacher');
+    } else {
+      setRole('unapproved_teacher');
     }
-    return data;
+    return { data, teacher: t };
   };
 
   const logout = async () => {
@@ -131,6 +142,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!user && !!profile,
       studentRegister, studentLogin,
       teacherRegister, teacherLogin, logout,
+      fetchProfile,
     }}>
       {!loading && children}
     </AuthContext.Provider>

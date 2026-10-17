@@ -16,7 +16,7 @@ export default function CollegeHeader() {
           <img
             src={jspmLogo}
             alt="JSPM Emblem"
-            className="h-14 w-auto sm:h-18 md:h-20 lg:h-22 max-w-[65px] sm:max-w-[85px] md:max-w-[100px] lg:max-w-[110px] object-contain"
+            className="h-16 w-auto sm:h-20 md:h-24 lg:h-26 max-w-[80px] sm:max-w-[100px] md:max-w-[125px] lg:max-w-[135px] object-contain shrink-0"
           />
         </Link>
 
@@ -26,9 +26,9 @@ export default function CollegeHeader() {
           className="flex-1 flex flex-col items-center justify-center text-center px-1 sm:px-2 md:px-4 hover:opacity-95 transition-opacity"
           title="JSPM’s Rajarshi Shahu College of Engineering, Tathawade Pune-33 - Department of Computer Engineering"
         >
-          {/* Line 1: JSPM’s (small, bold) */}
+          {/* Line 1: JSPM's (small, bold) */}
           <div className="text-xs sm:text-sm font-bold text-gray-900 tracking-normal leading-tight">
-            JSPM’s
+            JSPM's
           </div>
 
           {/* Line 2: Full college name (prominent and larger) */}
@@ -36,13 +36,12 @@ export default function CollegeHeader() {
             Rajarshi Shahu College of Engineering, Tathawade Pune-33
           </h1>
 
-          {/* Line 3 & 4: Affiliation text (readable font, formatted across two lines) */}
-          <div className="text-[10px] sm:text-xs md:text-[13px] text-gray-700 leading-tight sm:leading-snug mt-0.5 sm:mt-1 font-normal sm:font-medium">
-            <div>(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University</div>
-            <div>, Pune)</div>
+          {/* Line 3: Affiliation text (ends with 'Pune)' on the same line on desktop screens) */}
+          <div className="text-[10px] sm:text-[11.5px] md:text-xs lg:text-[13px] text-gray-700 leading-tight sm:leading-snug mt-0.5 sm:mt-1 font-normal sm:font-medium max-w-2xl mx-auto sm:whitespace-nowrap">
+            (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University, Pune)
           </div>
 
-          {/* Line 5: Department name (bold and prominent) */}
+          {/* Line 4: Department name (bold and prominent) */}
           <div className="text-xs sm:text-sm md:text-base font-bold text-gray-900 tracking-normal mt-1 sm:mt-1.5">
             Department of Computer Engineering
           </div>
@@ -57,7 +56,7 @@ export default function CollegeHeader() {
           <img
             src={rscoeLogo}
             alt="RSCOE Logo"
-            className="h-14 w-auto sm:h-18 md:h-20 lg:h-22 max-w-[65px] sm:max-w-[85px] md:max-w-[100px] lg:max-w-[110px] object-contain"
+            className="h-16 w-auto sm:h-20 md:h-24 lg:h-26 max-w-[80px] sm:max-w-[100px] md:max-w-[125px] lg:max-w-[135px] object-contain shrink-0"
           />
         </Link>
       </div>

@@ -47,9 +47,14 @@ export default function TeacherLogin() {
   const onLoginSubmit = async (data) => {
     setLoading(true);
     try {
-      await teacherLogin(data.email, data.password);
-      toast.success('Welcome back, Coordinator!');
-      navigate('/teacher/dashboard');
+      const result = await teacherLogin(data.email, data.password);
+      if (result?.teacher && !result.teacher.is_approved) {
+        toast('Faculty account pending administrator verification.', { icon: '⏳' });
+        navigate('/pending-approval');
+      } else {
+        toast.success('Welcome back, Coordinator!');
+        navigate('/teacher/dashboard');
+      }
     } catch (error) {
       toast.error(error.message || 'Incorrect email or password');
     } finally {
