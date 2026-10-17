@@ -39,7 +39,7 @@ export default function CollegeHeader() {
           {/* Line 3 & 4: Affiliation text (readable font, formatted across two lines) */}
           <div className="text-[10px] sm:text-xs md:text-[13px] text-gray-700 leading-tight sm:leading-snug mt-0.5 sm:mt-1 font-normal sm:font-medium">
             <div>(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University</div>
-            <div>Pune)</div>
+            <div>, Pune)</div>
           </div>
 
           {/* Line 5: Department name (bold and prominent) */}

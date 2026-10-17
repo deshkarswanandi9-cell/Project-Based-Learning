@@ -135,8 +135,8 @@ export const PROJECT_TYPES = [
 ];
 export const DEPARTMENTS    = ['Computer Engineering','Information Technology','ENTC Engineering','Mechanical Engineering','Civil Engineering','Electrical Engineering'];
 export const YEARS          = ['1st Year','2nd Year','3rd Year','4th Year'];
-export const SEMESTERS      = ['Sem I','Sem II','Sem III','Sem IV','Sem V','Sem VI','Sem VII','Sem VIII'];
-export const ACADEMIC_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27', '2026-2027'];
+export const SEMESTERS      = ['Sem 1', 'Sem 2'];
+export const ACADEMIC_YEARS = ['2025-26', '2026-27'];
 
 // Aliases for component imports
 export const PROGRAMME_OUTCOMES = PO_LIST;

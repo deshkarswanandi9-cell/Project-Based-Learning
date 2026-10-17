@@ -69,7 +69,7 @@ export default function MyProject() {
     (acc[sem] = acc[sem] || []).push(p);
     return acc;
   }, {});
-  const semOrder = ['Sem I','Sem II','Sem III','Sem IV','Sem V','Sem VI','Sem VII','Sem VIII'];
+  const semOrder = ['Sem 1', 'Sem 2', 'Sem I', 'Sem II', 'Sem III', 'Sem IV', 'Sem V', 'Sem VI', 'Sem VII', 'Sem VIII'];
   const sortedSems = Object.keys(grouped).sort((a, b) => {
     const ia = semOrder.indexOf(a), ib = semOrder.indexOf(b);
     if (ia === -1 && ib === -1) return a.localeCompare(b);
