@@ -69,12 +69,12 @@ try {
 
   // Signature section requirements
   assert(downloadReport.includes('PBL Coordinator Signature'), 'Must contain PBL Coordinator Signature');
-  assert(downloadReport.includes('Team Leader Signature'), 'Must contain Team Leader Signature');
+  assert(!downloadReport.includes('Team Leader Signature'), 'Must NOT contain Team Leader Signature');
   assert(downloadReport.includes('Signature: __________________________'), 'Must contain standard signature line');
   assert(downloadReport.includes('sigBlockHeight') || downloadReport.includes('addPage'), 'Must calculate height and add new page if needed to prevent splitting');
   assert(!downloadReport.includes('Digitally Signed by') && !downloadReport.includes('Auto-approved'), 'Must NOT insert fabricated digital signatures');
 
-  pass('downloadReport.js has enlarged logos, unified affiliation, and dedicated side-by-side signature section with pagination protection');
+  pass('downloadReport.js has enlarged logos, unified affiliation, and dedicated PBL Coordinator signature section with pagination protection');
 } catch (e) {
   fail('downloadReport.js check failed', e);
 }
@@ -92,11 +92,11 @@ try {
 
   // Signature section
   assert(viewer.includes('PBL Coordinator Signature'), 'Viewer must contain PBL Coordinator Signature');
-  assert(viewer.includes('Team Leader Signature'), 'Viewer must contain Team Leader Signature');
+  assert(!viewer.includes('Team Leader Signature'), 'Viewer must NOT contain Team Leader Signature');
   assert(viewer.includes('Signature: __________________________'), 'Viewer must contain signature line');
   assert(viewer.includes("breakInside: 'avoid'") || viewer.includes("pageBreakInside: 'avoid'"), 'Viewer must protect signature block from print breaks');
 
-  pass('ProjectDocumentViewer.jsx has enlarged logos, unified affiliation, and print-ready signature section');
+  pass('ProjectDocumentViewer.jsx has enlarged logos, unified affiliation, and print-ready PBL Coordinator signature section');
 } catch (e) {
   fail('ProjectDocumentViewer.jsx check failed', e);
 }

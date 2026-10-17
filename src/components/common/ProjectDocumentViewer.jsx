@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Award, MapPin } from 'lucide-react';
 import jspmLogo from '../../assets/jspm_logo.jpeg';
 import rscoeLogo from '../../assets/rscoe_logo.png';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos } from '../../utils/constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester } from '../../utils/constants';
 import { getSdgLogo } from '../../utils/sdgLogos';
 import { useSignedUrls } from '../../utils/storageUtils';
 
@@ -176,13 +176,13 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                   </div>
                 )}
                 <div>
-                  {fieldLabel('Faculty Mentor Name')}
-                  <div style={{ fontWeight: '600', color: '#111827' }}>{project.faculty_mentor_name || 'Not Specified'}</div>
+                  {fieldLabel('Mentor Name')}
+                  <div style={{ fontWeight: '600', color: '#111827' }}>{project.mentor_name || project.faculty_mentor_name || project.teachers?.full_name || 'Not Specified'}</div>
                 </div>
                 {project.semester && (
                   <div>
                     {fieldLabel('Semester')}
-                    <div style={{ color: '#374151' }}>{project.semester}</div>
+                    <div style={{ color: '#374151' }}>{formatAcademicYearAndSemester(project.academic_year, project.semester)}</div>
                   </div>
                 )}
               </div>
@@ -428,27 +428,15 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                 )}
               </div>
 
-              {/* Section H: Signatures */}
+              {/* Section H: Signature (Keep only PBL Coordinator Signature) */}
               <div style={{ marginTop: '36px', paddingTop: '20px', borderTop: '1px solid #E5E7EB', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '32px' }}>
-                  {/* Left: PBL Coordinator Signature */}
-                  <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end' }}>
+                  {/* PBL Coordinator Signature */}
+                  <div style={{ textAlign: 'left' }}>
                     <div style={{ height: '48px' }}></div>
                     <div style={{ borderBottom: '1px solid #111827', marginBottom: '8px', width: '220px' }}></div>
                     <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827' }}>
                       PBL Coordinator Signature
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#4B5563', marginTop: '2px' }}>
-                      Signature: __________________________
-                    </div>
-                  </div>
-
-                  {/* Right: Team Leader Signature */}
-                  <div style={{ flex: 1, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <div style={{ height: '48px' }}></div>
-                    <div style={{ borderBottom: '1px solid #111827', marginBottom: '8px', width: '220px' }}></div>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827' }}>
-                      Team Leader Signature
                     </div>
                     <div style={{ fontSize: '12px', color: '#4B5563', marginTop: '2px' }}>
                       Signature: __________________________

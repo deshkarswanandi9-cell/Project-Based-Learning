@@ -188,6 +188,31 @@ export const getEffectivePsos = (project) => {
   return predictProjectPsos(project);
 };
 
+/**
+ * Formats academic year and semester into institutional format:
+ * e.g., "2026–27 (Sem-I)" or "2026–27 (Sem-II)"
+ */
+export const formatAcademicYearAndSemester = (academicYear, semester) => {
+  const ay = (academicYear || '2026-27').replace('-', '–');
+  if (!semester) return ay;
+
+  const raw = String(semester).trim();
+  const num = raw.replace(/\D/g, '');
+  const romanMap = {
+    '1': 'Sem-I',
+    '2': 'Sem-II',
+    '3': 'Sem-III',
+    '4': 'Sem-IV',
+    '5': 'Sem-V',
+    '6': 'Sem-VI',
+    '7': 'Sem-VII',
+    '8': 'Sem-VIII'
+  };
+
+  const semCode = romanMap[num] || (raw.startsWith('Sem-') ? raw : `Sem-${raw.replace(/^Sem\s*/i, '')}`);
+  return `${ay} (${semCode})`;
+};
+
 
 export const PROJECT_DOMAINS = [
   'AI/ML','Web Development','DevOps','IoT',

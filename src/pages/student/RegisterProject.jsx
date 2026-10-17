@@ -399,6 +399,12 @@ export default function RegisterProject() {
     }
     setScreenshotError('');
 
+    // PSO Mapping is compulsory
+    if (!data.psos || data.psos.length === 0) {
+      toast.error('PSO mapping is compulsory. Please select at least one Programme Specific Outcome (PSO) in Section D.');
+      return;
+    }
+
     // Guard against faculty submission (which violates foreign key and RLS constraints on projects table)
     if (role === 'teacher' || role === 'unapproved_teacher') {
       toast.error(
@@ -1357,18 +1363,31 @@ export default function RegisterProject() {
         {/* SECTION D - PROGRAMME SPECIFIC OUTCOMES */}
         <div className="bg-white rounded-md shadow-2xs border border-gray-200/90 overflow-hidden">
           <div className="bg-brand-maroon px-5 py-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white tracking-wide">D. Programme Specific Outcomes (PSOs) Addressed</h2>
+            <h2 className="text-sm font-semibold text-white tracking-wide flex items-center gap-1.5">
+              <span>D. Programme Specific Outcomes (PSOs) Addressed</span>
+              <span className="text-amber-200 text-xs font-bold">(Compulsory)</span>
+            </h2>
             <span className="text-[11px] text-white/80 hidden sm:inline">RSCOE Computer Engineering Department PSOs</span>
           </div>
           <div className="p-4 sm:p-5">
             <Controller
               control={control}
               name="psos"
-              render={({ field: { value, onChange } }) => (
+              rules={{
+                validate: (v) => (v && v.length > 0) || 'PSO mapping is compulsory. Please select at least one PSO.'
+              }}
+              render={({ field: { value, onChange }, fieldState: { error } }) => (
                 <div>
-                  <p className="mb-3 text-xs font-semibold text-gray-600">
-                    {(value || []).length} / {PSO_LIST.length} department PSOs selected
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-gray-600">
+                      {(value || []).length} / {PSO_LIST.length} department PSOs selected <span className="text-brand-maroon font-bold">*</span>
+                    </p>
+                    {error && (
+                      <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                        {error.message}
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {PSO_LIST.map(pso => {
                       const isSelected = (value || []).includes(pso.id);

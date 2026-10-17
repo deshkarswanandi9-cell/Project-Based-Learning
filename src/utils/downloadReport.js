@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import jspmLogo from '../assets/jspm_logo.jpeg';
 import rscoeLogo from '../assets/rscoe_logo.png';
 import { getSignedViewUrls } from './storageUtils';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos } from './constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester } from './constants';
 import { getSdgLogo } from './sdgLogos';
 
 /**
@@ -184,8 +184,9 @@ export const downloadReport = async (project, _studentProfile) => {
     addField("Project Domain:", project.domain);
   }
 
-  // Faculty Mentor Name (DO NOT confuse with PBL Coordinator; Coordinator is NOT printed anywhere in report)
-  addField("Faculty Mentor Name:", project.faculty_mentor_name || 'Not Specified');
+  // Mentor Name (Requirement: Add a Mentor Name field to the report)
+  const mentorName = project.mentor_name || project.faculty_mentor_name || project.teachers?.full_name || 'Not Specified';
+  addField("Mentor Name:", mentorName);
 
   // Hackathon Specific Fields (only shown when applicable)
   const isHackathon = project.type?.startsWith('Hackathon') || !!project.hackathon_title;
@@ -228,9 +229,10 @@ export const downloadReport = async (project, _studentProfile) => {
     }
   }
 
-  // Semester if available
+  // Semester Format: Display the academic year first, followed by the semester in brackets, e.g., 2026–27 (Sem-I)
   if (project.semester) {
-    addField("Semester:", project.semester);
+    const formattedSemester = formatAcademicYearAndSemester(academicYear, project.semester);
+    addField("Semester:", formattedSemester);
   }
 
   // C. MAPPING WITH POS (Separate lines with official titles)
@@ -435,12 +437,12 @@ export const downloadReport = async (project, _studentProfile) => {
     }
   }
 
-  // H. DEDICATED SIGNATURE SECTION
+  // H. DEDICATED SIGNATURE SECTION (Keep only PBL Coordinator Signature)
   const sigBlockHeight = 38;
   const pageHeight = doc.internal.pageSize.getHeight();
   const bottomMargin = 20;
 
-  // Keep both signature blocks together at the end; add new page if needed
+  // Keep signature block at the end; add new page if needed
   if (y + sigBlockHeight > pageHeight - bottomMargin) {
     doc.addPage();
     y = 30;
@@ -450,28 +452,24 @@ export const downloadReport = async (project, _studentProfile) => {
 
   const sigColWidth = 65;
   const leftSigX = margin;
-  const rightSigX = pageWidth - margin - sigColWidth;
   const sigLineY = y + 18;
 
-  // Signature divider lines
+  // Signature divider line
   doc.setDrawColor(60, 60, 60);
   doc.setLineWidth(0.35);
   doc.line(leftSigX, sigLineY, leftSigX + sigColWidth, sigLineY);
-  doc.line(rightSigX, sigLineY, rightSigX + sigColWidth, sigLineY);
 
-  // Role labels
+  // Role label
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(20, 20, 20);
   doc.text("PBL Coordinator Signature", leftSigX, sigLineY + 5);
-  doc.text("Team Leader Signature", rightSigX, sigLineY + 5);
 
-  // Printable line labels
+  // Printable line label
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(80, 80, 80);
   doc.text("Signature: __________________________", leftSigX, sigLineY + 10);
-  doc.text("Signature: __________________________", rightSigX, sigLineY + 10);
 
   // SAVE FILE
   const safeTitle = (project.title || 'Project_Report').substring(0, 25).replace(/[^a-zA-Z0-9_-]/g, '_');
