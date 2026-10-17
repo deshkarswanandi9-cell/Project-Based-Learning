@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import jspmLogo from '../assets/jspm_logo.jpeg';
 import rscoeLogo from '../assets/rscoe_logo.png';
 import { getSignedViewUrls } from './storageUtils';
@@ -322,6 +323,7 @@ export const downloadReport = async (project, _studentProfile) => {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10.5);
     y += (warnLines.length * 5) + 3;
+  } else {
     const rawSelected = normalizePsos(rawPsos);
     const selectedPsoList = rawSelected.length > 0 ? rawSelected : getEffectivePsos(project);
     if (selectedPsoList.length === 0) {
@@ -372,36 +374,33 @@ export const downloadReport = async (project, _studentProfile) => {
   y += (descLines.length * 5) + 6;
 
   // G. PROJECT TEAM MEMBERS
-  checkPageBreak(25);
+  checkPageBreak(30);
   doc.setFont(labelFont, 'bold');
   doc.text("Project Team Members:", margin, y);
-  y += 5.5;
-  doc.setFont(valueFont, 'normal');
+  y += 4;
 
   const members = project.team_members || [];
-  if (members.length > 0) {
-    for (let i = 0; i < members.length; i++) {
-      const member = members[i];
-      const memberDetails = [member.rollNumber, member.rbtNumber].filter(Boolean).join(' / ');
-      const memberText = memberDetails ? `${member.name} (${memberDetails})` : (member.name || 'Student');
-      checkPageBreak(6);
-      doc.text(`${i + 1}) ${memberText}`, margin + 3, y);
-      y += 5.5;
+  const memberRows = members.length > 0
+    ? members.map((m, i) => [i + 1, m.name || '—', m.rollNumber || '—', m.rbtNumber || '—'])
+    : [[1, project.students?.full_name || _studentProfile?.full_name || 'Primary Student', project.students?.roll_number || _studentProfile?.roll_number || '—', '—']];
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Sr.', 'Name of Student', 'Roll Number', 'RBT Number']],
+    body: memberRows,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 2.2, font: 'helvetica', lineColor: [229, 231, 235], lineWidth: 0.2 },
+    headStyles: { fillColor: [243, 244, 246], textColor: [75, 85, 99], fontStyle: 'bold' },
+    bodyStyles: { textColor: [31, 41, 55] },
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 'auto', fontStyle: 'bold' },
+      2: { cellWidth: 36 },
+      3: { cellWidth: 36 }
     }
-  } else {
-    // Graceful fallback for single-student or legacy records without team_members array
-    const primaryName = project.students?.full_name || _studentProfile?.full_name;
-    const primaryRoll = project.students?.roll_number || _studentProfile?.roll_number;
-    if (primaryName) {
-      const text = primaryRoll ? `${primaryName} (${primaryRoll})` : primaryName;
-      doc.text(`1) ${text}`, margin + 3, y);
-      y += 5.5;
-    } else {
-      doc.text("1) Not specified", margin + 3, y);
-      y += 5.5;
-    }
-  }
-  y += 5;
+  });
+  y = doc.lastAutoTable.finalY + 8;
 
   // G. PROJECT ATTACHMENTS (Screenshots & Certificates)
   checkPageBreak(40);

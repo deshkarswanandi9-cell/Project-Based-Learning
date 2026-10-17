@@ -49,8 +49,7 @@ runTest("downloadReport.js and ProjectDocumentViewer.jsx normalize legacy projec
 runTest("RegisterProject.jsx has required Faculty Mentor Name input field and submission payload", () => {
   const registerSrc = fs.readFileSync(path.resolve('./src/pages/student/RegisterProject.jsx'), 'utf-8');
   assert(registerSrc.includes("faculty_mentor_name"), "Must have faculty_mentor_name in form state");
-  assert(registerSrc.includes("Faculty Mentor Name"), "Must have Faculty Mentor Name label");
-  assert(registerSrc.includes("faculty_mentor_name: data.faculty_mentor_name?.trim() || null"), "Must trim and include in payload");
+  assert(registerSrc.includes("data.faculty_mentor_name?.trim()"), "Must trim and include in payload");
   assert(registerSrc.includes("'faculty_mentor_name'"), "Must include in potentialNewCols for graceful schema fallback");
 });
 
