@@ -177,7 +177,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                 )}
                 <div>
                   {fieldLabel('Mentor Name')}
-                  <div style={{ fontWeight: '600', color: '#111827' }}>{project.mentor_name || project.faculty_mentor_name || project.teachers?.full_name || 'Not Specified'}</div>
+                  <div style={{ fontWeight: '600', color: '#111827' }}>{project.faculty_mentor_name || 'Not Specified'}</div>
                 </div>
                 {project.semester && (
                   <div>

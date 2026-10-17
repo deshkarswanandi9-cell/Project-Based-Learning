@@ -184,8 +184,8 @@ export const downloadReport = async (project, _studentProfile) => {
     addField("Project Domain:", project.domain);
   }
 
-  // Mentor Name (Requirement: Add a Mentor Name field to the report)
-  const mentorName = project.mentor_name || project.faculty_mentor_name || project.teachers?.full_name || 'Not Specified';
+  // Mentor Name (Exclusively uses assigned faculty_mentor_name, never coordinator)
+  const mentorName = project.faculty_mentor_name || 'Not Specified';
   addField("Mentor Name:", mentorName);
 
   // Hackathon Specific Fields (only shown when applicable)
