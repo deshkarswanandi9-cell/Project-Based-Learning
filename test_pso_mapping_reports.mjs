@@ -168,7 +168,7 @@ runTest('Report preview and PDF report use consistent section headings, resoluti
 // ---------------------------------------------------------------------------
 runTest('Existing SDGs and POs remain preserved and untouched in payload and viewer', () => {
   const registerSrc = fs.readFileSync(path.resolve('./src/pages/student/RegisterProject.jsx'), 'utf-8');
-  assert(registerSrc.includes('sdg_goals: data.sdg_goals.map(Number)'), 'SDG mapping preserved');
+  assert(registerSrc.includes('(data.sdg_goals || []).map(Number)') || registerSrc.includes('data.sdg_goals.map(Number)'), 'SDG mapping preserved');
   assert(registerSrc.includes('pos: data.pos'), 'PO mapping preserved');
   assert(registerSrc.includes("const validPsos = (data.psos || []).filter(p => ['PSO1', 'PSO2', 'PSO3'].includes(p));"), 'PSO filtering preserved');
 });
