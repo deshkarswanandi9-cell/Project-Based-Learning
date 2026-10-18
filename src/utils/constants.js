@@ -189,14 +189,16 @@ export const getEffectivePsos = (project) => {
 };
 
 /**
- * Formats academic year and semester into institutional format:
- * e.g., "2026–27 (Sem-I)" or "2026–27 (Sem-II)"
+ * Formats semester into standardized institutional label:
+ * e.g., "Sem 1" -> "Sem-I", "Sem 2" -> "Sem-II"
  */
-export const formatAcademicYearAndSemester = (academicYear, semester) => {
-  const ay = (academicYear || '2026-27').replace('-', '–');
-  if (!semester) return ay;
-
+export const formatSemesterCode = (semester) => {
+  if (!semester) return '';
   const raw = String(semester).trim();
+  const romanMatch = raw.match(/\b(I|II|III|IV|V|VI|VII|VIII)\b/i);
+  if (romanMatch) {
+    return `Sem-${romanMatch[1].toUpperCase()}`;
+  }
   const num = raw.replace(/\D/g, '');
   const romanMap = {
     '1': 'Sem-I',
@@ -208,8 +210,17 @@ export const formatAcademicYearAndSemester = (academicYear, semester) => {
     '7': 'Sem-VII',
     '8': 'Sem-VIII'
   };
+  return romanMap[num] || (raw.startsWith('Sem-') ? raw : `Sem-${raw.replace(/^Sem\s*/i, '')}`);
+};
 
-  const semCode = romanMap[num] || (raw.startsWith('Sem-') ? raw : `Sem-${raw.replace(/^Sem\s*/i, '')}`);
+/**
+ * Formats academic year and semester into institutional format:
+ * e.g., "2026–27 (Sem-I)" or "2026–27 (Sem-II)"
+ */
+export const formatAcademicYearAndSemester = (academicYear, semester) => {
+  const ay = (academicYear || '2026-27').replace('-', '–');
+  if (!semester) return ay;
+  const semCode = formatSemesterCode(semester);
   return `${ay} (${semCode})`;
 };
 

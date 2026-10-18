@@ -33,4 +33,10 @@ assert(statReportSrc.includes('// Outer page border'), 'downloadStatisticalRepor
 assert(statReportSrc.includes('doc.rect(borderMargin, borderMargin, borderWidth, borderHeight)'), 'downloadStatisticalReport.js must draw border rect on each page');
 console.log('[PASS] downloadStatisticalReport.js includes outer page border on all pages.');
 
+// 6. Verify Semester is placed beside Academic Year in institutional header
+assert(downloadReportSrc.includes('const semHeaderPart = semCode ? `   |   Semester: ${semCode}` : \'\';'), 'downloadReport.js must format semester beside academic year');
+assert(viewerSrc.includes('{project.semester ? `   |   Semester: ${formatSemesterCode(project.semester)}` : \'\'}'), 'ProjectDocumentViewer must format semester beside academic year');
+assert(!downloadReportSrc.includes('addField("Semester:",'), 'downloadReport.js must not duplicate semester as a standalone project field');
+console.log('[PASS] Semester is positioned beside Academic Year in institutional header across PDF and preview.');
+
 console.log('\nAll outer border and report cleanup verification tests passed successfully!');

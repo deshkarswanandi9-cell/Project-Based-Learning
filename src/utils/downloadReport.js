@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import jspmLogo from '../assets/jspm_logo.jpeg';
 import rscoeLogo from '../assets/rscoe_logo.png';
 import { getSignedViewUrls } from './storageUtils';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester } from './constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester, formatSemesterCode } from './constants';
 import { getSdgLogo } from './sdgLogos';
 
 /**
@@ -124,11 +124,13 @@ export const downloadReport = async (project, _studentProfile) => {
   doc.text("Department of Computer Engineering", pageWidth / 2, y, { align: 'center' });
   y += 5;
 
-  // Academic Year directly below Department of Computer Engineering
+  // Academic Year directly below Department of Computer Engineering (with Semester beside it)
   const academicYear = project.academic_year || 'Not Specified';
+  const semCode = formatSemesterCode(project.semester);
+  const semHeaderPart = semCode ? `   |   Semester: ${semCode}` : '';
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.text(`Academic Year: ${academicYear}`, pageWidth / 2, y, { align: 'center' });
+  doc.text(`Academic Year: ${academicYear}${semHeaderPart}`, pageWidth / 2, y, { align: 'center' });
   y += 4;
 
   // Horizontal divider
@@ -227,11 +229,7 @@ export const downloadReport = async (project, _studentProfile) => {
     }
   }
 
-  // Semester Format: Display the academic year first, followed by the semester in brackets, e.g., 2026–27 (Sem-I)
-  if (project.semester) {
-    const formattedSemester = formatAcademicYearAndSemester(academicYear, project.semester);
-    addField("Semester:", formattedSemester);
-  }
+
 
   // C. MAPPING WITH POS (Separate lines with official titles)
   if (project.pos && project.pos.length > 0) {

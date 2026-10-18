@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Award, MapPin } from 'lucide-react';
 import jspmLogo from '../../assets/jspm_logo.jpeg';
 import rscoeLogo from '../../assets/rscoe_logo.png';
-import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester } from '../../utils/constants';
+import { SDG_GOALS, PO_LIST, PSO_LIST, normalizePsos, resolvePsoDetails, getEffectivePsos, formatAcademicYearAndSemester, formatSemesterCode } from '../../utils/constants';
 import { getSdgLogo } from '../../utils/sdgLogos';
 import { useSignedUrls } from '../../utils/storageUtils';
 
@@ -141,7 +141,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                   Department of Computer Engineering
                 </div>
                 <div style={{ fontWeight: 'bold', fontSize: '13px', marginTop: '4px', color: '#111' }}>
-                  Academic Year: {project.academic_year || 'Not Specified'}
+                  Academic Year: {project.academic_year || 'Not Specified'}{project.semester ? `   |   Semester: ${formatSemesterCode(project.semester)}` : ''}
                 </div>
               </div>
               <img src={rscoeLogo} alt="RSCOE Logo" style={{ height: '84px', width: 'auto', maxWidth: '100px', objectFit: 'contain' }} />
@@ -179,12 +179,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
                   {fieldLabel('Mentor Name')}
                   <div style={{ fontWeight: '600', color: '#111827' }}>{project.faculty_mentor_name || 'Not Specified'}</div>
                 </div>
-                {project.semester && (
-                  <div>
-                    {fieldLabel('Semester')}
-                    <div style={{ color: '#374151' }}>{formatAcademicYearAndSemester(project.academic_year, project.semester)}</div>
-                  </div>
-                )}
+
               </div>
 
               {/* Hackathon & Achievement Details Section */}

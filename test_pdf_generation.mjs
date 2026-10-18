@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { jsPDF } from 'jspdf';
-import { PO_LIST, PSO_LIST, SDG_GOALS } from './src/utils/constants.js';
+import { PO_LIST, PSO_LIST, SDG_GOALS, formatSemesterCode } from './src/utils/constants.js';
 
 console.log('=== Verifying PDF Layout and Content Engine ===\n');
 
@@ -57,9 +57,11 @@ doc.text("Department of Computer Engineering", pageWidth / 2, y, { align: 'cente
 y += 5;
 
 const academicYear = mockProject.academic_year || 'Not Specified';
+const semCode = formatSemesterCode(mockProject.semester);
+const semHeaderPart = semCode ? `   |   Semester: ${semCode}` : '';
 doc.setFont('helvetica', 'bold');
 doc.setFontSize(9.5);
-doc.text(`Academic Year: ${academicYear}`, pageWidth / 2, y, { align: 'center' });
+doc.text(`Academic Year: ${academicYear}${semHeaderPart}`, pageWidth / 2, y, { align: 'center' });
 y += 4;
 
 doc.setDrawColor(30, 30, 30);
