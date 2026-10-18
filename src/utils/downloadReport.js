@@ -69,15 +69,16 @@ export const downloadReport = async (project, _studentProfile) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
-  let y = 12;
+  let y = 14;
 
   const isDraft = Boolean(project.isDraft);
   if (isDraft) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(30, 64, 175);
-    doc.text("[ UNSAVED DRAFT PREVIEW — NOT PERSISTED TO DATABASE ]", pageWidth / 2, 6, { align: 'center' });
+    doc.text("[ UNSAVED DRAFT PREVIEW — NOT PERSISTED TO DATABASE ]", pageWidth / 2, 11, { align: 'center' });
     doc.setTextColor(0, 0, 0);
+    y = 16;
   }
 
   // Function to add image and wait for it
@@ -95,8 +96,8 @@ export const downloadReport = async (project, _studentProfile) => {
 
   // 1. ADD INSTITUTION LOGOS
   await Promise.all([
-    addImageAsync(jspmLogo, 14, 9, 27, 21),
-    addImageAsync(rscoeLogo, pageWidth - 41, 9, 27, 21)
+    addImageAsync(jspmLogo, 14, 11, 27, 21),
+    addImageAsync(rscoeLogo, pageWidth - 41, 11, 27, 21)
   ]);
 
   // 2. EXACT INSTITUTION HEADER
@@ -223,9 +224,6 @@ export const downloadReport = async (project, _studentProfile) => {
       if (venueParts.length > 0) {
         addField("Venue / Location:", venueParts.join(', '));
       }
-    }
-    if (project.document_url) {
-      addField("Certificate / Proof:", "Attached and archived in portal repository");
     }
   }
 
@@ -470,6 +468,19 @@ export const downloadReport = async (project, _studentProfile) => {
   doc.setFontSize(8.5);
   doc.setTextColor(80, 80, 80);
   doc.text("Signature: __________________________", leftSigX, sigLineY + 10);
+
+  // I. DRAW OUTER PAGE BORDER ON ALL PAGES
+  const totalPages = doc.internal.getNumberOfPages();
+  const borderMargin = 8;
+  const borderWidth = pageWidth - (borderMargin * 2);
+  const borderHeight = pageHeight - (borderMargin * 2);
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.5);
+    doc.rect(borderMargin, borderMargin, borderWidth, borderHeight);
+  }
 
   // SAVE FILE
   const safeTitle = (project.title || 'Project_Report').substring(0, 25).replace(/[^a-zA-Z0-9_-]/g, '_');

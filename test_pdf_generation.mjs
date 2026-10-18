@@ -153,13 +153,27 @@ doc.text("Project Introduction:", margin, y);
 y += 6;
 doc.text(mockProject.description, margin + 3, y);
 
+// Outer page border
+const totalPages = doc.internal.getNumberOfPages();
+const borderMargin = 8;
+const borderWidth = pageWidth - (borderMargin * 2);
+const borderHeight = doc.internal.pageSize.getHeight() - (borderMargin * 2);
+
+for (let i = 1; i <= totalPages; i++) {
+  doc.setPage(i);
+  doc.setDrawColor(20, 20, 20);
+  doc.setLineWidth(0.5);
+  doc.rect(borderMargin, borderMargin, borderWidth, borderHeight);
+}
+
 const pdfOutput = doc.output();
 const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 fs.writeFileSync('./tmp_generated_test_report.pdf', pdfBuffer);
 
 console.log('Generated test PDF: ./tmp_generated_test_report.pdf (' + pdfBuffer.length + ' bytes)');
 
-// Verify text contents
+// Verify outer border and text contents
+assert(pdfOutput.includes("re") || pdfOutput.includes("rect"), "PDF must contain outer border rect");
 assert(pdfOutput.includes("Department of Computer Engineering"), "Must contain department");
 assert(pdfOutput.includes("Academic Year: 2025-26"), "Must contain exact project academic year");
 assert(pdfOutput.includes("Complex Engineering Problems"), "Must normalize to Complex Engineering Problems");

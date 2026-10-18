@@ -99,7 +99,7 @@ export default function ProjectDocumentViewer({ project, onClose }) {
             color: '#000',
             lineHeight: '1.5',
             backgroundColor: '#fff',
-            border: '4px double #111'
+            border: '2px solid #111'
           }}>
 
             {isDraft && (

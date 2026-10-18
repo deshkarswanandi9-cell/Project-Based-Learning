@@ -440,17 +440,26 @@ export const downloadStatisticalReportPDF = async ({
   });
 
   // ══════════════════════════════════════════════════════════════════════
-  // PAGE NUMBERS & INSTITUTIONAL FOOTER ON ALL PAGES
+  // PAGE NUMBERS, FOOTER & OUTER BORDER ON ALL PAGES
   // ══════════════════════════════════════════════════════════════════════
   const totalPages = doc.internal.getNumberOfPages();
+  const borderMargin = 8;
+  const borderWidth = pageWidth - (borderMargin * 2);
+  const borderHeight = doc.internal.pageSize.getHeight() - (borderMargin * 2);
+
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     const pageH = doc.internal.pageSize.getHeight();
 
+    // Outer page border
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.45);
+    doc.rect(borderMargin, borderMargin, borderWidth, borderHeight);
+
     // Footer divider line
     doc.setDrawColor(210, 210, 210);
     doc.setLineWidth(0.3);
-    doc.line(margin, pageH - 12, pageWidth - margin, pageH - 12);
+    doc.line(margin, pageH - 13, pageWidth - margin, pageH - 13);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
@@ -458,10 +467,10 @@ export const downloadStatisticalReportPDF = async ({
     doc.text(
       "JSPM's Rajarshi Shahu College of Engineering, Pune · Dept. of Computer Engineering",
       margin,
-      pageH - 7
+      pageH - 9.5
     );
 
-    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageH - 7, { align: 'right' });
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageH - 9.5, { align: 'right' });
   }
 
   // ══════════════════════════════════════════════════════════════════════
