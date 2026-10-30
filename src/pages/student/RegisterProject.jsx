@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getTeachers, registerProject, supabase } from '../../utils/api';
 import { PROJECT_DOMAINS, PROJECT_TYPES, SDG_GOALS, PO_LIST, PSO_LIST, SEMESTERS, ACADEMIC_YEARS } from '../../utils/constants';
 import { getSdgLogo } from '../../utils/sdgLogos';
-import { Check, XCircle, AlertCircle, Camera, X as XIcon, Award, Paperclip, FileText, Eye } from 'lucide-react';
+import { Check, CheckCircle, XCircle, AlertCircle, Camera, X as XIcon, Award, Paperclip, FileText, Eye } from 'lucide-react';
 import AIRecommendationsSection from '../../components/student/AIRecommendationsSection';
 import ProjectDocumentViewer from '../../components/common/ProjectDocumentViewer';
 
@@ -222,13 +222,29 @@ export default function RegisterProject() {
   const handleScreenshotChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    const valid = files.filter(f => f.type.startsWith('image/'));
-    if (valid.length + screenshots.length > MAX_SCREENSHOTS) {
-      setScreenshotError(`You can upload a maximum of ${MAX_SCREENSHOTS} screenshots.`);
+
+    const invalidType = files.find(f => !f.type.startsWith('image/'));
+    if (invalidType) {
+      setScreenshotError('Please upload image files (JPEG, PNG, WebP).');
+      e.target.value = '';
       return;
     }
+
+    const oversized = files.find(f => f.size > 10 * 1024 * 1024);
+    if (oversized) {
+      setScreenshotError(`File "${oversized.name}" exceeds the 10MB limit.`);
+      e.target.value = '';
+      return;
+    }
+
+    if (files.length + screenshots.length > MAX_SCREENSHOTS) {
+      setScreenshotError(`You can upload a maximum of ${MAX_SCREENSHOTS} screenshots.`);
+      e.target.value = '';
+      return;
+    }
+
     setScreenshotError('');
-    const newEntries = valid.map(f => ({ file: f, preview: URL.createObjectURL(f) }));
+    const newEntries = files.map(f => ({ file: f, preview: URL.createObjectURL(f) }));
     setScreenshots(prev => [...prev, ...newEntries]);
     // Reset the input so same file can be re-added after removal
     e.target.value = '';
@@ -236,7 +252,9 @@ export default function RegisterProject() {
 
   const removeScreenshot = (idx) => {
     setScreenshots(prev => {
-      URL.revokeObjectURL(prev[idx].preview);
+      if (prev[idx]?.preview) {
+        URL.revokeObjectURL(prev[idx].preview);
+      }
       return prev.filter((_, i) => i !== idx);
     });
     setScreenshotError('');
@@ -248,6 +266,7 @@ export default function RegisterProject() {
 
     if (selectedFiles.length + certificates.length > MAX_CERTIFICATES) {
       setCertificateError(`You can upload a maximum of ${MAX_CERTIFICATES} certificate documents.`);
+      e.target.value = '';
       return;
     }
 
@@ -255,12 +274,14 @@ export default function RegisterProject() {
     const invalidType = selectedFiles.find(f => !allowedTypes.includes(f.type));
     if (invalidType) {
       setCertificateError('Please upload a PDF or an image (PNG, JPG, WebP).');
+      e.target.value = '';
       return;
     }
 
     const oversized = selectedFiles.find(f => f.size > 10 * 1024 * 1024);
     if (oversized) {
       setCertificateError(`File "${oversized.name}" exceeds the 10MB limit.`);
+      e.target.value = '';
       return;
     }
 
@@ -499,7 +520,7 @@ export default function RegisterProject() {
         domain: data.domain,
         description: data.description,
         technologies: data.technologies,
-        sdg_goals: (data.sdg_goals || []).map(Number),
+        sdg_goals: (data.sdg_goals || []).map(Number), // sdg_goals: data.sdg_goals.map(Number)
         pos: data.pos,
         mentor_id: mentor?.user_id || null,
         mentor_name: mentor?.full_name || 'Department Faculty',
@@ -510,12 +531,9 @@ export default function RegisterProject() {
         document_url: uploadedCertificateUrl,
         team_members: data.team_members,
         status: 'Pending',
+        faculty_mentor_name: data.faculty_mentor_name?.trim() || null,
         ...hackathonData
       };
-
-      if (data.faculty_mentor_name?.trim()) {
-        projectPayload.faculty_mentor_name = data.faculty_mentor_name.trim();
-      }
       if (validPsos && validPsos.length > 0) {
         projectPayload.psos = validPsos;
       }
